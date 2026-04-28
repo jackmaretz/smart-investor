@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-28T21:38:27.991727",
+  "generated_at": "2026-04-28T21:51:23.121007",
   "quarter": "Q1-2026",
   "investor_count": 34,
   "total_unique_stocks": 7051,
@@ -283,19 +283,6 @@
       "exit_count": 8
     },
     {
-      "cusip": "16935C109",
-      "nameOfIssuer": "Chime Finl",
-      "ticker": "",
-      "exiting_investors": [
-        "Stanley Druckenmiller",
-        "George Soros",
-        "Jim Simons",
-        "Bill Miller",
-        "Stephen Schwarzman"
-      ],
-      "exit_count": 5
-    },
-    {
       "cusip": "26884L109",
       "nameOfIssuer": "Eqt",
       "ticker": "",
@@ -309,6 +296,19 @@
       "exit_count": 5
     },
     {
+      "cusip": "16935C109",
+      "nameOfIssuer": "Chime Finl",
+      "ticker": "",
+      "exiting_investors": [
+        "Stanley Druckenmiller",
+        "George Soros",
+        "Jim Simons",
+        "Bill Miller",
+        "Stephen Schwarzman"
+      ],
+      "exit_count": 5
+    },
+    {
       "cusip": "925050106",
       "nameOfIssuer": "Verona Pharma",
       "ticker": "",
@@ -318,32 +318,6 @@
         "Ken Griffin",
         "Jim Simons",
         "Bill Miller"
-      ],
-      "exit_count": 5
-    },
-    {
-      "cusip": "80874P109",
-      "nameOfIssuer": "Light & Wonder",
-      "ticker": "",
-      "exiting_investors": [
-        "Joel Greenblatt",
-        "Philippe Laffont",
-        "Ken Griffin",
-        "Jim Simons",
-        "Ray Dalio"
-      ],
-      "exit_count": 5
-    },
-    {
-      "cusip": "487836108",
-      "nameOfIssuer": "Kellanova",
-      "ticker": "",
-      "exiting_investors": [
-        "Joel Greenblatt",
-        "Ken Griffin",
-        "Jim Simons",
-        "Ray Dalio",
-        "Henry Ellenbogen"
       ],
       "exit_count": 5
     },
@@ -370,6 +344,32 @@
         "Ken Griffin",
         "Jim Simons",
         "Ray Dalio"
+      ],
+      "exit_count": 5
+    },
+    {
+      "cusip": "80874P109",
+      "nameOfIssuer": "Light & Wonder",
+      "ticker": "",
+      "exiting_investors": [
+        "Joel Greenblatt",
+        "Philippe Laffont",
+        "Ken Griffin",
+        "Jim Simons",
+        "Ray Dalio"
+      ],
+      "exit_count": 5
+    },
+    {
+      "cusip": "487836108",
+      "nameOfIssuer": "Kellanova",
+      "ticker": "",
+      "exiting_investors": [
+        "Joel Greenblatt",
+        "Ken Griffin",
+        "Jim Simons",
+        "Ray Dalio",
+        "Henry Ellenbogen"
       ],
       "exit_count": 5
     },
