@@ -51,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ frontend/public/data/
+          git add data/ frontend/public/data/ 2>/dev/null || true
           git diff --staged --quiet || git commit -m "chore: update 13F data $(date +%Y-%m-%d)"
           git push || true
 

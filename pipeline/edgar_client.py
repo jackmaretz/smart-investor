@@ -217,14 +217,14 @@ def _accession_to_path(accession: str) -> str:
     return accession.replace("-", "")
 
 
-def _filing_base_url(cik: str, accession: str) -> str:
-    """Build the base Archives URL for a filing."""
+_SEC_WWW = "https://www.sec.gov"
+
+
+def _filing_base_path(cik: str, accession: str) -> str:
+    """Return the Archives path segment (no domain) for a filing."""
     cik_int = str(int(cik))
     acc_nodash = _accession_to_path(accession)
-    return (
-        f"{SEC_EDGAR_BASE_URL}/Archives/edgar/data/"
-        f"{cik_int}/{acc_nodash}"
-    )
+    return f"/Archives/edgar/data/{cik_int}/{acc_nodash}"
 
 
 def find_infotable_url(
@@ -233,13 +233,11 @@ def find_infotable_url(
     """
     Locate the information-table XML document inside a 13F filing.
 
-    Strategy:
-    1. Probe common infotable filenames directly (HEAD requests).
-    2. Fallback: fetch the filing HTML index and parse links.
-
-    Returns the full URL to the XML file, or *None* if not found.
+    The infotable filename varies per filing (often numeric like ``50240.xml``).
+    We fetch the filing index HTML from ``www.sec.gov`` and pick the XML that
+    contains the ``<informationTable>`` data — i.e. any XML that is NOT the
+    primary cover document (``primary_doc.xml``).
     """
-    base = _filing_base_url(cik, accession)
     acc_nodash = _accession_to_path(accession)
     cache_key = f"infotable_url_{cik}_{acc_nodash}"
 
@@ -248,61 +246,54 @@ def find_infotable_url(
         if cached is not None:
             return cached
 
-    # ---- Strategy 1: try common filenames directly ----
-    candidates = [
-        "infotable.xml",
-        "InfoTable.xml",
-        "INFOTABLE.XML",
-        "primary_doc.xml",
-        "form13fInfoTable.xml",
-        "13F_InfoTable.xml",
-        "information_table.xml",
-        "13fInfoTable.xml",
-    ]
-    for name in candidates:
-        url = f"{base}/{name}"
-        _rate_limit()
-        try:
-            resp = _session().head(url, timeout=15)
-            if resp.status_code == 200:
-                logger.debug("Found infotable via probe: %s", url)
-                _write_cache(cache_key, url)
-                return url
-        except requests.exceptions.RequestException:
-            continue
+    base_path = _filing_base_path(cik, accession)
+    index_url = f"{_SEC_WWW}{base_path}/"
 
-    # ---- Strategy 2: fetch HTML index page, parse XML links ----
-    index_url = f"{base}/"
-    logger.debug("Probing HTML index: %s", index_url)
+    logger.debug("Fetching filing index: %s", index_url)
     try:
         resp = _get(index_url, raise_on_4xx=False)
-        if resp.status_code == 200:
-            xml_links = re.findall(
-                r'href="([^"]*\.xml)"', resp.text, re.IGNORECASE
-            )
-            infotable_patterns = [
-                re.compile(r"infotable", re.IGNORECASE),
-                re.compile(r"information.?table", re.IGNORECASE),
-                re.compile(r"13f.?info", re.IGNORECASE),
-            ]
-            # First pass: known infotable patterns
-            for link in xml_links:
-                for pat in infotable_patterns:
-                    if pat.search(link):
-                        resolved = link if link.startswith("http") else f"{base}/{link}"
-                        logger.debug("Found infotable from HTML index: %s", resolved)
-                        _write_cache(cache_key, resolved)
-                        return resolved
-            # Second pass: any XML that isn't the primary/cover doc
-            for link in xml_links:
-                lower = link.lower()
-                if "primary" not in lower and "cover" not in lower and "r13f" not in lower:
-                    resolved = link if link.startswith("http") else f"{base}/{link}"
-                    logger.debug("Fallback infotable from HTML index: %s", resolved)
-                    _write_cache(cache_key, resolved)
-                    return resolved
+        if resp.status_code != 200:
+            logger.warning("Filing index returned %s: %s", resp.status_code, index_url)
+            return None
+
+        xml_links = re.findall(r'href="([^"]*\.xml)"', resp.text, re.IGNORECASE)
+        if not xml_links:
+            logger.warning("No XML files found in filing index: %s", index_url)
+            return None
+
+        infotable_patterns = [
+            re.compile(r"infotable", re.IGNORECASE),
+            re.compile(r"information.?table", re.IGNORECASE),
+            re.compile(r"13f.?info", re.IGNORECASE),
+        ]
+
+        def _resolve(link: str) -> str:
+            if link.startswith("http"):
+                return link
+            if link.startswith("/"):
+                return f"{_SEC_WWW}{link}"
+            return f"{_SEC_WWW}{base_path}/{link}"
+
+        # Pass 1: known infotable name patterns
+        for link in xml_links:
+            for pat in infotable_patterns:
+                if pat.search(link):
+                    url = _resolve(link)
+                    logger.info("Found infotable (name match): %s", url)
+                    _write_cache(cache_key, url)
+                    return url
+
+        # Pass 2: any XML that isn't the primary/cover document
+        for link in xml_links:
+            lower = link.lower()
+            if "primary" not in lower and "cover" not in lower and "r13f" not in lower:
+                url = _resolve(link)
+                logger.info("Found infotable (non-primary XML): %s", url)
+                _write_cache(cache_key, url)
+                return url
+
     except Exception:
-        logger.debug("HTML index fetch failed for %s", index_url)
+        logger.exception("Failed to locate infotable for CIK %s / %s", cik, accession)
 
     logger.warning(
         "Could not locate infotable for CIK %s / accession %s", cik, accession
