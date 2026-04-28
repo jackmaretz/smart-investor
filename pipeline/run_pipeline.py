@@ -33,7 +33,7 @@ from edgar_client import (
     get_13f_filings,
     verify_cik,
 )
-from enrichment import enrich_holdings, resolve_tickers_openfigi, resolve_tickers_by_name
+from enrichment import enrich_holdings, resolve_tickers_openfigi
 from parser_13f import compare_quarters, parse_infotable_xml
 from scoring import (
     aggregate_holdings,
@@ -382,14 +382,9 @@ def run(
         len(all_holdings_flat),
     )
 
-    # Fallback: yfinance name search for remaining (slow, low volume)
-    if missing_before > 0:
-        try:
-            resolve_tickers_by_name(all_holdings_flat)
-        except Exception:
-            logger.exception(
-                "Name-search resolution failed — continuing without it"
-            )
+    # Note: yfinance name-search fallback disabled — it searches by company
+    # name (e.g. "ASHLAND") which yfinance doesn't support. OpenFIGI + cache
+    # provide sufficient coverage.
 
     missing_after = sum(1 for h in all_holdings_flat if not h.get("ticker"))
     logger.info(
