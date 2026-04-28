@@ -1,0 +1,331 @@
+[
+  {
+    "name": "Warren Buffett",
+    "fund": "Berkshire Hathaway Inc",
+    "cik": "0001067983",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Bill Ackman",
+    "fund": "Pershing Square Capital Management",
+    "cik": "0001336528",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "Stanley Druckenmiller",
+    "fund": "Duquesne Family Office",
+    "cik": "0001536411",
+    "category": "macro",
+    "cik_verified": true
+  },
+  {
+    "name": "David Tepper",
+    "fund": "Appaloosa Management",
+    "cik": "0001656456",
+    "category": "multi-strategy",
+    "cik_verified": true
+  },
+  {
+    "name": "Seth Klarman",
+    "fund": "Baupost Group",
+    "cik": "0001061768",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Michael Burry",
+    "fund": "Scion Asset Management",
+    "cik": "0001649339",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Joel Greenblatt",
+    "fund": "Gotham Asset Management",
+    "cik": "0001510387",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Li Lu",
+    "fund": "Himalaya Capital Management",
+    "cik": "0001709323",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Mohnish Pabrai",
+    "fund": "Pabrai Investment Funds",
+    "cik": "0001173334",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Carl Icahn",
+    "fund": "Icahn Capital LP",
+    "cik": "0000921669",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "George Soros",
+    "fund": "Soros Fund Management",
+    "cik": "0001029160",
+    "category": "macro",
+    "cik_verified": true
+  },
+  {
+    "name": "David Einhorn",
+    "fund": "Greenlight Capital",
+    "cik": "0001079114",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Dan Loeb",
+    "fund": "Third Point LLC",
+    "cik": "0001040273",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "Chase Coleman",
+    "fund": "Tiger Global Management",
+    "cik": "0001167483",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Andreas Halvorsen",
+    "fund": "Viking Global Investors",
+    "cik": "0001103804",
+    "category": "multi-strategy",
+    "cik_verified": true
+  },
+  {
+    "name": "Philippe Laffont",
+    "fund": "Coatue Management",
+    "cik": "0001535392",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Ken Griffin",
+    "fund": "Citadel Advisors LLC",
+    "cik": "0001423053",
+    "category": "quant",
+    "cik_verified": true
+  },
+  {
+    "name": "Jim Simons",
+    "fund": "Renaissance Technologies LLC",
+    "cik": "0001037389",
+    "category": "quant",
+    "cik_verified": true
+  },
+  {
+    "name": "Ray Dalio",
+    "fund": "Bridgewater Associates",
+    "cik": "0001350694",
+    "category": "macro",
+    "cik_verified": true
+  },
+  {
+    "name": "Howard Marks",
+    "fund": "Oaktree Capital Management",
+    "cik": "0001403528",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Chris Hohn",
+    "fund": "TCI Fund Management",
+    "cik": "0001647251",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "Tom Russo",
+    "fund": "Gardner Russo & Quinn",
+    "cik": "0001352523",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Pat Dorsey",
+    "fund": "Dorsey Asset Management",
+    "cik": "0001767680",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Terry Smith",
+    "fund": "Fundsmith LLP",
+    "cik": "0001569838",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Chuck Akre",
+    "fund": "Akre Capital Management",
+    "cik": "0001112520",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Mason Hawkins",
+    "fund": "Southeastern Asset Management",
+    "cik": "0000807985",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Bruce Berkowitz",
+    "fund": "Fairholme Capital Management",
+    "cik": "0001056831",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Eddie Lampert",
+    "fund": "ESL Investments",
+    "cik": "0001065332",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "John Paulson",
+    "fund": "Paulson & Co Inc",
+    "cik": "0001035674",
+    "category": "macro",
+    "cik_verified": true
+  },
+  {
+    "name": "Leon Cooperman",
+    "fund": "Omega Advisors",
+    "cik": "0001061165",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Nelson Peltz",
+    "fund": "Trian Fund Management",
+    "cik": "0001345471",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "Paul Singer",
+    "fund": "Elliott Investment Management",
+    "cik": "0001048445",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "Jeffrey Ubben",
+    "fund": "ValueAct Capital Management",
+    "cik": "0001397076",
+    "category": "activist",
+    "cik_verified": true
+  },
+  {
+    "name": "Bill Miller",
+    "fund": "Miller Value Partners",
+    "cik": "0001536411",
+    "category": "value",
+    "cik_verified": false
+  },
+  {
+    "name": "Steve Mandel",
+    "fund": "Lone Pine Capital",
+    "cik": "0001061165",
+    "category": "growth",
+    "cik_verified": false
+  },
+  {
+    "name": "Lee Ainslie",
+    "fund": "Maverick Capital",
+    "cik": "0001040280",
+    "category": "multi-strategy",
+    "cik_verified": true
+  },
+  {
+    "name": "Alexander Sacerdote",
+    "fund": "Whale Rock Capital Management",
+    "cik": "0001633336",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Stephen Schwarzman",
+    "fund": "Blackstone Inc",
+    "cik": "0001393818",
+    "category": "multi-strategy",
+    "cik_verified": true
+  },
+  {
+    "name": "Henry Ellenbogen",
+    "fund": "Durable Capital Partners",
+    "cik": "0001802994",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Brad Gerstner",
+    "fund": "Altimeter Capital Management",
+    "cik": "0001730514",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Dennis Hong",
+    "fund": "ShawSpring Partners",
+    "cik": "0001697205",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Frank Sands",
+    "fund": "Sands Capital Management",
+    "cik": "0001535778",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Rajiv Jain",
+    "fund": "GQG Partners",
+    "cik": "0001715072",
+    "category": "growth",
+    "cik_verified": true
+  },
+  {
+    "name": "Christopher Davis",
+    "fund": "Davis Advisors",
+    "cik": "0000014848",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Donald Yacktman",
+    "fund": "Yacktman Asset Management",
+    "cik": "0000810958",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "David Abrams",
+    "fund": "Abrams Capital Management",
+    "cik": "0001358706",
+    "category": "value",
+    "cik_verified": true
+  },
+  {
+    "name": "Glenn Greenberg",
+    "fund": "Brave Warrior Advisors",
+    "cik": "0001543160",
+    "category": "value",
+    "cik_verified": true
+  }
+]

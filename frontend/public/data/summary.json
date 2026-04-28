@@ -1,0 +1,233 @@
+{
+  "metadata": {
+    "last_updated": "2025-01-15T10:30:00",
+    "quarter": "Q4-2024",
+    "investors_analyzed": 47,
+    "unique_holdings": 850,
+    "total_portfolio_value": 2500000000000
+  },
+  "top_picks": [
+    {
+      "ticker": "AAPL",
+      "company": "Apple Inc",
+      "overall_score": 92.5,
+      "consensus_score": 88,
+      "conviction_score": 82,
+      "investors_holding": 35,
+      "avg_portfolio_weight": 5.8,
+      "sector": "Technology",
+      "market_cap_category": "Mega",
+      "price": 195.50,
+      "pe_ratio": 28.5,
+      "revenue_growth": 0.08,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "MSFT",
+      "company": "Microsoft Corp",
+      "overall_score": 90.1,
+      "consensus_score": 86,
+      "conviction_score": 79,
+      "investors_holding": 33,
+      "avg_portfolio_weight": 5.1,
+      "sector": "Technology",
+      "market_cap_category": "Mega",
+      "price": 415.20,
+      "pe_ratio": 35.2,
+      "revenue_growth": 0.13,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "AMZN",
+      "company": "Amazon.com Inc",
+      "overall_score": 87.3,
+      "consensus_score": 82,
+      "conviction_score": 74,
+      "investors_holding": 30,
+      "avg_portfolio_weight": 4.5,
+      "sector": "Consumer Cyclical",
+      "market_cap_category": "Mega",
+      "price": 185.60,
+      "pe_ratio": 60.1,
+      "revenue_growth": 0.12,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "GOOGL",
+      "company": "Alphabet Inc",
+      "overall_score": 85.8,
+      "consensus_score": 80,
+      "conviction_score": 72,
+      "investors_holding": 28,
+      "avg_portfolio_weight": 4.1,
+      "sector": "Technology",
+      "market_cap_category": "Mega",
+      "price": 141.80,
+      "pe_ratio": 23.4,
+      "revenue_growth": 0.11,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "UNH",
+      "company": "UnitedHealth Group",
+      "overall_score": 83.4,
+      "consensus_score": 78,
+      "conviction_score": 76,
+      "investors_holding": 25,
+      "avg_portfolio_weight": 3.8,
+      "sector": "Healthcare",
+      "market_cap_category": "Mega",
+      "price": 528.40,
+      "pe_ratio": 21.0,
+      "revenue_growth": 0.14,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "META",
+      "company": "Meta Platforms Inc",
+      "overall_score": 81.2,
+      "consensus_score": 75,
+      "conviction_score": 70,
+      "investors_holding": 24,
+      "avg_portfolio_weight": 3.5,
+      "sector": "Technology",
+      "market_cap_category": "Mega",
+      "price": 390.10,
+      "pe_ratio": 26.8,
+      "revenue_growth": 0.23,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA Corp",
+      "overall_score": 80.6,
+      "consensus_score": 74,
+      "conviction_score": 68,
+      "investors_holding": 22,
+      "avg_portfolio_weight": 3.2,
+      "sector": "Technology",
+      "market_cap_category": "Mega",
+      "price": 495.30,
+      "pe_ratio": 65.4,
+      "revenue_growth": 1.22,
+      "is_new_position_cluster": true
+    },
+    {
+      "ticker": "LLY",
+      "company": "Eli Lilly & Co",
+      "overall_score": 78.9,
+      "consensus_score": 72,
+      "conviction_score": 71,
+      "investors_holding": 20,
+      "avg_portfolio_weight": 2.9,
+      "sector": "Healthcare",
+      "market_cap_category": "Mega",
+      "price": 620.80,
+      "pe_ratio": 105.2,
+      "revenue_growth": 0.20,
+      "is_new_position_cluster": true
+    },
+    {
+      "ticker": "V",
+      "company": "Visa Inc",
+      "overall_score": 77.5,
+      "consensus_score": 70,
+      "conviction_score": 67,
+      "investors_holding": 19,
+      "avg_portfolio_weight": 2.6,
+      "sector": "Financial Services",
+      "market_cap_category": "Mega",
+      "price": 279.50,
+      "pe_ratio": 30.1,
+      "revenue_growth": 0.11,
+      "is_new_position_cluster": false
+    },
+    {
+      "ticker": "JPM",
+      "company": "JPMorgan Chase & Co",
+      "overall_score": 76.2,
+      "consensus_score": 68,
+      "conviction_score": 65,
+      "investors_holding": 18,
+      "avg_portfolio_weight": 2.4,
+      "sector": "Financial Services",
+      "market_cap_category": "Mega",
+      "price": 198.30,
+      "pe_ratio": 11.8,
+      "revenue_growth": 0.09,
+      "is_new_position_cluster": false
+    }
+  ],
+  "sell_signals": [
+    {
+      "ticker": "PYPL",
+      "company": "PayPal Holdings",
+      "overall_score": 25.3,
+      "investors_selling": 8,
+      "avg_reduction": -32.5,
+      "sector": "Financial Services"
+    },
+    {
+      "ticker": "DIS",
+      "company": "Walt Disney Co",
+      "overall_score": 30.1,
+      "investors_selling": 6,
+      "avg_reduction": -18.2,
+      "sector": "Communication Services"
+    },
+    {
+      "ticker": "BA",
+      "company": "Boeing Co",
+      "overall_score": 22.8,
+      "investors_selling": 5,
+      "avg_reduction": -45.0,
+      "sector": "Industrials"
+    }
+  ],
+  "new_position_clusters": [
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA Corp",
+      "investors_entering": 8,
+      "avg_initial_weight": 2.1,
+      "sector": "Technology"
+    },
+    {
+      "ticker": "LLY",
+      "company": "Eli Lilly & Co",
+      "investors_entering": 6,
+      "avg_initial_weight": 1.8,
+      "sector": "Healthcare"
+    },
+    {
+      "ticker": "PANW",
+      "company": "Palo Alto Networks",
+      "investors_entering": 4,
+      "avg_initial_weight": 1.2,
+      "sector": "Technology"
+    },
+    {
+      "ticker": "CRWD",
+      "company": "CrowdStrike Holdings",
+      "investors_entering": 3,
+      "avg_initial_weight": 0.9,
+      "sector": "Technology"
+    }
+  ],
+  "sector_distribution": {
+    "Technology": 38.5,
+    "Healthcare": 14.2,
+    "Financial Services": 12.8,
+    "Consumer Cyclical": 10.1,
+    "Communication Services": 7.5,
+    "Industrials": 6.3,
+    "Consumer Defensive": 4.2,
+    "Energy": 3.1,
+    "Altro": 3.3
+  },
+  "stats": {
+    "avg_score": 45.2,
+    "median_score": 42.0,
+    "top_10_avg": 83.4
+  }
+}

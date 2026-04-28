@@ -1,0 +1,94 @@
+name: 13F Pipeline + Deploy
+
+on:
+  schedule:
+    # Runs quarterly: Feb 15, May 15, Aug 15, Nov 15 (after 13F filing deadline)
+    - cron: '0 6 15 2,5,8,11 *'
+  workflow_dispatch:
+    inputs:
+      quarter:
+        description: 'Quarter to analyze (e.g. Q4-2024)'
+        required: false
+      force_refresh:
+        description: 'Force re-download all filings'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run 13F pipeline
+        run: |
+          cd pipeline
+          python run_pipeline.py \
+            ${{ github.event.inputs.quarter && format('--quarter {0}', github.event.inputs.quarter) || '' }} \
+            ${{ github.event.inputs.force_refresh == 'true' && '--force-refresh' || '' }}
+
+      - name: Commit data updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ frontend/public/data/
+          git diff --staged --quiet || git commit -m "chore: update 13F data $(date +%Y-%m-%d)"
+          git push
+
+  deploy:
+    needs: run-pipeline
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Pull latest data
+        run: git pull origin main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install and build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
