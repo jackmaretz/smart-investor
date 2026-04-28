@@ -40,6 +40,7 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Run 13F pipeline
+        continue-on-error: true
         run: |
           cd pipeline
           python run_pipeline.py \
@@ -52,10 +53,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/ frontend/public/data/
           git diff --staged --quiet || git commit -m "chore: update 13F data $(date +%Y-%m-%d)"
-          git push
+          git push || true
 
   deploy:
     needs: run-pipeline
+    if: always()
     runs-on: ubuntu-latest
     environment:
       name: github-pages

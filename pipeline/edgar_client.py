@@ -62,36 +62,25 @@ def _session() -> requests.Session:
     return _session._s  # type: ignore[attr-defined]
 
 
-def _get(url: str, *, params: dict | None = None) -> requests.Response:
+def _get(
+    url: str, *, params: dict | None = None, raise_on_4xx: bool = True
+) -> requests.Response:
     """
     Perform a rate-limited GET with exponential back-off on 429 / 5xx.
+
+    Only *network* errors and transient server errors are retried.
+    4xx client errors (e.g. 404) are returned or raised immediately.
     """
     for attempt in range(1, SEC_MAX_RETRIES + 1):
         _rate_limit()
         try:
             resp = _session().get(url, params=params, timeout=30)
-            if resp.status_code == 200:
-                return resp
-            if resp.status_code == 429 or resp.status_code >= 500:
-                wait = SEC_BACKOFF_FACTOR**attempt
-                logger.warning(
-                    "HTTP %s from %s — retrying in %ss (attempt %d/%d)",
-                    resp.status_code,
-                    url,
-                    wait,
-                    attempt,
-                    SEC_MAX_RETRIES,
-                )
-                time.sleep(wait)
-                continue
-            # 4xx (non-429) — no point retrying
-            resp.raise_for_status()
         except requests.exceptions.RequestException as exc:
             if attempt == SEC_MAX_RETRIES:
                 raise
             wait = SEC_BACKOFF_FACTOR**attempt
             logger.warning(
-                "Request error for %s: %s — retrying in %ss (attempt %d/%d)",
+                "Network error for %s: %s — retrying in %ss (attempt %d/%d)",
                 url,
                 exc,
                 wait,
@@ -99,7 +88,26 @@ def _get(url: str, *, params: dict | None = None) -> requests.Response:
                 SEC_MAX_RETRIES,
             )
             time.sleep(wait)
-    # Should not reach here, but satisfy type checker
+            continue
+
+        if resp.status_code == 200:
+            return resp
+        if resp.status_code == 429 or resp.status_code >= 500:
+            wait = SEC_BACKOFF_FACTOR**attempt
+            logger.warning(
+                "HTTP %s from %s — retrying in %ss (attempt %d/%d)",
+                resp.status_code,
+                url,
+                wait,
+                attempt,
+                SEC_MAX_RETRIES,
+            )
+            time.sleep(wait)
+            continue
+        # 4xx (non-429) — no point retrying
+        if raise_on_4xx:
+            resp.raise_for_status()
+        return resp
     raise RuntimeError(f"Failed to fetch {url} after {SEC_MAX_RETRIES} attempts")
 
 
@@ -209,32 +217,14 @@ def _accession_to_path(accession: str) -> str:
     return accession.replace("-", "")
 
 
-def fetch_filing_index(
-    cik: str, accession: str, *, force: bool = False
-) -> dict[str, Any]:
-    """
-    Fetch the filing index JSON for a specific filing.
-
-    Returns the parsed JSON from
-    ``/Archives/edgar/data/{cik}/{accession_no_dashes}/index.json``.
-    """
+def _filing_base_url(cik: str, accession: str) -> str:
+    """Build the base Archives URL for a filing."""
+    cik_int = str(int(cik))
     acc_nodash = _accession_to_path(accession)
-    cache_key = f"index_{cik}_{acc_nodash}.json"
-    if not force:
-        cached = _read_cache(cache_key)
-        if cached is not None:
-            return json.loads(cached)
-
-    cik_int = str(int(cik))  # strip leading zeros for the URL path
-    url = (
+    return (
         f"{SEC_EDGAR_BASE_URL}/Archives/edgar/data/"
-        f"{cik_int}/{acc_nodash}/index.json"
+        f"{cik_int}/{acc_nodash}"
     )
-    logger.info("Fetching filing index: %s", url)
-    resp = _get(url)
-    data = resp.text
-    _write_cache(cache_key, data)
-    return json.loads(data)
 
 
 def find_infotable_url(
@@ -243,42 +233,76 @@ def find_infotable_url(
     """
     Locate the information-table XML document inside a 13F filing.
 
+    Strategy:
+    1. Probe common infotable filenames directly (HEAD requests).
+    2. Fallback: fetch the filing HTML index and parse links.
+
     Returns the full URL to the XML file, or *None* if not found.
     """
-    idx = fetch_filing_index(cik, accession, force=force)
-    items = idx.get("directory", {}).get("item", [])
-    cik_int = str(int(cik))
+    base = _filing_base_url(cik, accession)
     acc_nodash = _accession_to_path(accession)
+    cache_key = f"infotable_url_{cik}_{acc_nodash}"
 
-    # Common names for the infotable file
-    infotable_patterns = [
-        re.compile(r"infotable\.xml", re.IGNORECASE),
-        re.compile(r"information.?table", re.IGNORECASE),
-        re.compile(r"13f.?info", re.IGNORECASE),
-        re.compile(r"table\.xml", re.IGNORECASE),
+    if not force:
+        cached = _read_cache(cache_key)
+        if cached is not None:
+            return cached
+
+    # ---- Strategy 1: try common filenames directly ----
+    candidates = [
+        "infotable.xml",
+        "InfoTable.xml",
+        "INFOTABLE.XML",
+        "primary_doc.xml",
+        "form13fInfoTable.xml",
+        "13F_InfoTable.xml",
+        "information_table.xml",
+        "13fInfoTable.xml",
     ]
-
-    for item in items:
-        name = item.get("name", "")
-        for pat in infotable_patterns:
-            if pat.search(name):
-                url = (
-                    f"{SEC_EDGAR_BASE_URL}/Archives/edgar/data/"
-                    f"{cik_int}/{acc_nodash}/{name}"
-                )
-                logger.debug("Found infotable: %s", url)
+    for name in candidates:
+        url = f"{base}/{name}"
+        _rate_limit()
+        try:
+            resp = _session().head(url, timeout=15)
+            if resp.status_code == 200:
+                logger.debug("Found infotable via probe: %s", url)
+                _write_cache(cache_key, url)
                 return url
+        except requests.exceptions.RequestException:
+            continue
 
-    # Fallback: any XML file that is not the primary document
-    for item in items:
-        name = item.get("name", "")
-        if name.lower().endswith(".xml"):
-            url = (
-                f"{SEC_EDGAR_BASE_URL}/Archives/edgar/data/"
-                f"{cik_int}/{acc_nodash}/{name}"
+    # ---- Strategy 2: fetch HTML index page, parse XML links ----
+    index_url = f"{base}/"
+    logger.debug("Probing HTML index: %s", index_url)
+    try:
+        resp = _get(index_url, raise_on_4xx=False)
+        if resp.status_code == 200:
+            xml_links = re.findall(
+                r'href="([^"]*\.xml)"', resp.text, re.IGNORECASE
             )
-            logger.debug("Fallback infotable candidate: %s", url)
-            return url
+            infotable_patterns = [
+                re.compile(r"infotable", re.IGNORECASE),
+                re.compile(r"information.?table", re.IGNORECASE),
+                re.compile(r"13f.?info", re.IGNORECASE),
+            ]
+            # First pass: known infotable patterns
+            for link in xml_links:
+                for pat in infotable_patterns:
+                    if pat.search(link):
+                        resolved = link if link.startswith("http") else f"{base}/{link}"
+                        logger.debug("Found infotable from HTML index: %s", resolved)
+                        _write_cache(cache_key, resolved)
+                        return resolved
+            # Second pass: any XML that isn't the primary/cover doc
+            for link in xml_links:
+                lower = link.lower()
+                if "primary" not in lower and "cover" not in lower and "r13f" not in lower:
+                    resolved = link if link.startswith("http") else f"{base}/{link}"
+                    logger.debug("Fallback infotable from HTML index: %s", resolved)
+                    _write_cache(cache_key, resolved)
+                    return resolved
+    except Exception:
+        logger.debug("HTML index fetch failed for %s", index_url)
 
     logger.warning(
         "Could not locate infotable for CIK %s / accession %s", cik, accession
