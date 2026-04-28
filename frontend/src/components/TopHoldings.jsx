@@ -8,22 +8,26 @@ const COLUMNS = [
   {
     key: 'ticker',
     label: 'Ticker',
+    tooltipKey: 'ticker',
     width: '80px',
     render: (val) => <span className="ticker-cell">{val}</span>
   },
   {
     key: 'company',
     label: 'Azienda',
+    tooltipKey: 'company',
     render: (val) => val
   },
   {
     key: 'sector',
     label: 'Settore',
+    tooltipKey: 'sector',
     render: (val) => <span className="badge badge-sector">{val}</span>
   },
   {
     key: 'overall_score',
     label: 'Score',
+    tooltipKey: 'overall_score',
     render: (val) => (
       <span className={`score-badge ${getScoreClass(val)}`}>
         {val?.toFixed(1) ?? '—'}
@@ -33,21 +37,25 @@ const COLUMNS = [
   {
     key: 'investors_holding',
     label: '# Investitori',
+    tooltipKey: 'investors_holding',
     render: (val) => val
   },
   {
     key: 'avg_portfolio_weight',
     label: 'Peso Medio %',
+    tooltipKey: 'avg_portfolio_weight',
     render: (val) => formatPercent(val)
   },
   {
     key: 'total_value_held',
     label: 'Valore Totale',
+    tooltipKey: 'total_value_held',
     render: (val) => formatCurrency(val)
   },
   {
     key: 'quarter_change',
     label: 'Variazione',
+    tooltipKey: 'quarter_change',
     render: (val) => {
       const c = getChangeIndicator(val);
       return <span className={c.className}>{c.symbol} {c.label}</span>;
@@ -56,11 +64,13 @@ const COLUMNS = [
   {
     key: 'pe_ratio',
     label: 'P/E',
+    tooltipKey: 'pe_ratio',
     render: (val) => formatRatio(val)
   },
   {
     key: 'revenue_growth',
     label: 'Crescita Rev.',
+    tooltipKey: 'revenue_growth',
     render: (val) => formatPercentFromDecimal(val)
   }
 ];

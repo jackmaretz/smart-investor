@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { formatCurrency, formatPercent, getScoreClass, getChangeIndicator } from './DataTable';
+import InfoTooltip from './InfoTooltip';
 
 export default function ExitedPositions({ data }) {
   const { allHoldings, investors } = data;
@@ -144,9 +145,9 @@ export default function ExitedPositions({ data }) {
                       <th>Azienda</th>
                       <th>Riduzione %</th>
                       <th>Valore Residuo</th>
-                      <th>Peso Portafoglio</th>
-                      <th>Score</th>
-                      <th>Settore</th>
+                      <th>Peso Portafoglio <InfoTooltip metricKey="avg_portfolio_weight" /></th>
+                      <th>Score <InfoTooltip metricKey="overall_score" /></th>
+                      <th>Settore <InfoTooltip metricKey="sector" /></th>
                     </tr>
                   </thead>
                   <tbody>

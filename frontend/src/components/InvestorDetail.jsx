@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { formatCurrency, formatPercent, getScoreClass, getChangeIndicator } from './DataTable';
+import InfoTooltip from './InfoTooltip';
 
 export default function InvestorDetail({ data }) {
   const { investors, allHoldings } = data;
@@ -31,6 +32,16 @@ export default function InvestorDetail({ data }) {
       .filter(Boolean)
       .sort((a, b) => b.portfolio_weight - a.portfolio_weight);
   }, [investor, allHoldings]);
+
+  // Enrich new/exited positions with company info from allHoldings
+  const enrichPosition = (pos) => {
+    const h = allHoldings.find(ah => ah.ticker === pos.ticker);
+    return {
+      ...pos,
+      company: h?.company || '',
+      sector: h?.sector || '',
+    };
+  };
 
   const categoryLabel = (cat) => {
     const labels = {
@@ -87,11 +98,17 @@ export default function InvestorDetail({ data }) {
               ) : null}
             </div>
             <div className="stat-card">
-              <div className="stat-card-label">Valore Portafoglio</div>
+              <div className="stat-card-label">
+                Valore Portafoglio
+                <InfoTooltip metricKey="total_portfolio_value" />
+              </div>
               <div className="stat-card-value">{formatCurrency(investor.portfolio_value)}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-card-label">Numero Posizioni</div>
+              <div className="stat-card-label">
+                Numero Posizioni
+                <InfoTooltip metricKey="investors_holding" />
+              </div>
               <div className="stat-card-value">{investor.total_holdings}</div>
             </div>
             <div className="stat-card">
@@ -107,88 +124,134 @@ export default function InvestorDetail({ data }) {
           <div className="movement-section">
             <div className="movement-card">
               <div className="movement-card-title">
-                <span style={{ color: 'var(--positive)' }}>⊕</span> Nuove Posizioni ({investor.new_positions?.length || 0})
+                <span style={{ color: 'var(--positive)' }}>{'⊕'}</span> Nuove Posizioni ({investor.new_positions?.length || 0})
               </div>
               {(investor.new_positions || []).length === 0 ? (
                 <div className="no-data" style={{ padding: 'var(--spacing-sm)' }}>Nessuna</div>
               ) : (
-                investor.new_positions.map(p => (
-                  <div key={p.ticker} className="movement-item">
-                    <span className="ticker-cell">{p.ticker}</span>
-                    <span>{formatCurrency(p.value)}</span>
-                  </div>
-                ))
+                investor.new_positions.map(p => {
+                  const enriched = enrichPosition(p);
+                  return (
+                    <div key={p.ticker} className="movement-item">
+                      <div>
+                        <span className="ticker-cell">{p.ticker}</span>
+                        {enriched.company && (
+                          <span style={{ marginLeft: '6px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                            {enriched.company}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span>{formatCurrency(p.value)}</span>
+                        {enriched.sector && (
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>{enriched.sector}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
 
             <div className="movement-card">
               <div className="movement-card-title">
-                <span style={{ color: 'var(--negative)' }}>⊖</span> Posizioni Chiuse ({investor.exited_positions?.length || 0})
+                <span style={{ color: 'var(--negative)' }}>{'⊖'}</span> Posizioni Chiuse ({investor.exited_positions?.length || 0})
               </div>
               {(investor.exited_positions || []).length === 0 ? (
                 <div className="no-data" style={{ padding: 'var(--spacing-sm)' }}>Nessuna</div>
               ) : (
-                investor.exited_positions.map(p => (
-                  <div key={p.ticker} className="movement-item">
-                    <span className="ticker-cell">{p.ticker}</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>
-                      (era {formatCurrency(p.prev_value)})
-                    </span>
-                  </div>
-                ))
+                investor.exited_positions.map(p => {
+                  const enriched = enrichPosition(p);
+                  return (
+                    <div key={p.ticker} className="movement-item">
+                      <div>
+                        <span className="ticker-cell">{p.ticker}</span>
+                        {enriched.company && (
+                          <span style={{ marginLeft: '6px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                            {enriched.company}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          (era {formatCurrency(p.prev_value)})
+                        </span>
+                        {enriched.sector && (
+                          <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>{enriched.sector}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
 
             <div className="movement-card">
               <div className="movement-card-title">
-                <span style={{ color: 'var(--positive)' }}>▲</span> Aumentate ({investor.increased_positions?.length || 0})
+                <span style={{ color: 'var(--positive)' }}>{'▲'}</span> Aumentate ({investor.increased_positions?.length || 0})
               </div>
               {(investor.increased_positions || []).length === 0 ? (
                 <div className="no-data" style={{ padding: 'var(--spacing-sm)' }}>Nessuna</div>
               ) : (
-                investor.increased_positions.map(p => (
-                  <div key={p.ticker} className="movement-item">
-                    <div>
-                      <span className="ticker-cell">{p.ticker}</span>
-                      <span style={{ marginLeft: '8px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-                        {formatCurrency(p.value)}
+                investor.increased_positions.map(p => {
+                  const enriched = enrichPosition(p);
+                  return (
+                    <div key={p.ticker} className="movement-item">
+                      <div>
+                        <span className="ticker-cell">{p.ticker}</span>
+                        {enriched.company && (
+                          <span style={{ marginLeft: '6px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                            {enriched.company}
+                          </span>
+                        )}
+                        <span style={{ marginLeft: '8px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                          {formatCurrency(p.value)}
+                        </span>
+                      </div>
+                      <span className="change-increased">
+                        +{p.shares_change_pct?.toFixed(1)}%
                       </span>
                     </div>
-                    <span className="change-increased">
-                      +{p.shares_change_pct?.toFixed(1)}%
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
             <div className="movement-card">
               <div className="movement-card-title">
-                <span style={{ color: 'var(--negative)' }}>▼</span> Ridotte ({investor.decreased_positions?.length || 0})
+                <span style={{ color: 'var(--negative)' }}>{'▼'}</span> Ridotte ({investor.decreased_positions?.length || 0})
               </div>
               {(investor.decreased_positions || []).length === 0 ? (
                 <div className="no-data" style={{ padding: 'var(--spacing-sm)' }}>Nessuna</div>
               ) : (
-                investor.decreased_positions.map(p => (
-                  <div key={p.ticker} className="movement-item">
-                    <div>
-                      <span className="ticker-cell">{p.ticker}</span>
-                      <span style={{ marginLeft: '8px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
-                        {formatCurrency(p.value)}
+                investor.decreased_positions.map(p => {
+                  const enriched = enrichPosition(p);
+                  return (
+                    <div key={p.ticker} className="movement-item">
+                      <div>
+                        <span className="ticker-cell">{p.ticker}</span>
+                        {enriched.company && (
+                          <span style={{ marginLeft: '6px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                            {enriched.company}
+                          </span>
+                        )}
+                        <span style={{ marginLeft: '8px', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                          {formatCurrency(p.value)}
+                        </span>
+                      </div>
+                      <span className="change-decreased">
+                        {p.shares_change_pct?.toFixed(1)}%
                       </span>
                     </div>
-                    <span className="change-decreased">
-                      {p.shares_change_pct?.toFixed(1)}%
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
 
           {/* Full holdings table */}
           <div className="section">
-            <h2 className="section-title">📋 Portafoglio Completo</h2>
+            <h2 className="section-title">{'▦'} Portafoglio Completo</h2>
             {investorHoldings.length === 0 ? (
               <div className="no-data">Nessun dettaglio disponibile per questo investitore</div>
             ) : (
@@ -197,14 +260,14 @@ export default function InvestorDetail({ data }) {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Ticker</th>
+                      <th>Ticker <InfoTooltip metricKey="ticker" /></th>
                       <th>Azienda</th>
-                      <th>Peso %</th>
+                      <th>Peso % <InfoTooltip metricKey="avg_portfolio_weight" /></th>
                       <th>Valore</th>
                       <th>Azioni</th>
-                      <th>Variazione</th>
-                      <th>Score</th>
-                      <th>Settore</th>
+                      <th>Variazione <InfoTooltip metricKey="quarter_change" /></th>
+                      <th>Score <InfoTooltip metricKey="overall_score" /></th>
+                      <th>Settore <InfoTooltip metricKey="sector" /></th>
                     </tr>
                   </thead>
                   <tbody>

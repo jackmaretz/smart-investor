@@ -4,10 +4,12 @@ import {
 } from 'recharts';
 import { formatCurrency, formatNumber, formatPercent, getScoreClass, getChangeIndicator } from './DataTable';
 import { useTheme } from '../context/ThemeContext';
+import InfoTooltip from './InfoTooltip';
+import BuySellSignals from './BuySellSignals';
 
 const PIE_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
+  '#2d2d2d', '#4a4a4a', '#666666', '#808080', '#999999',
+  '#b3b3b3', '#cccccc', '#e0e0e0', '#454545', '#737373'
 ];
 
 export default function Dashboard({ summary, holdings }) {
@@ -24,11 +26,17 @@ export default function Dashboard({ summary, holdings }) {
   }, [sectorDist]);
 
   const tooltipStyle = {
-    backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
-    border: `1px solid ${theme === 'dark' ? '#2d3a52' : '#e2e8f0'}`,
+    backgroundColor: theme === 'dark' ? '#1c1c1c' : '#ffffff',
+    border: `1px solid ${theme === 'dark' ? '#2a2a2a' : '#d9d9d9'}`,
     borderRadius: '8px',
-    color: theme === 'dark' ? '#e2e8f0' : '#1a1f36',
+    color: theme === 'dark' ? '#e0e0e0' : '#1a1a1a',
     fontSize: '12px',
+  };
+
+  // Build a minimal data object for BuySellSignals compact mode
+  const buySellData = {
+    allHoldings: holdings || [],
+    summary,
   };
 
   return (
@@ -43,51 +51,69 @@ export default function Dashboard({ summary, holdings }) {
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-card-icon">👥</div>
-          <div className="stat-card-label">Investitori Analizzati</div>
+          <div className="stat-card-icon">{'◉'}</div>
+          <div className="stat-card-label">
+            Investitori Analizzati
+            <InfoTooltip metricKey="investors_analyzed" />
+          </div>
           <div className="stat-card-value">{formatNumber(meta.investors_analyzed)}</div>
           <div className="stat-card-detail">Super investitori monitorati</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-icon">📊</div>
-          <div className="stat-card-label">Titoli Unici</div>
+          <div className="stat-card-icon">{'▦'}</div>
+          <div className="stat-card-label">
+            Titoli Unici
+            <InfoTooltip metricKey="unique_holdings" />
+          </div>
           <div className="stat-card-value">{formatNumber(meta.unique_holdings)}</div>
           <div className="stat-card-detail">Posizioni distinte identificate</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-icon">🏆</div>
-          <div className="stat-card-label">Top 10 Score Medio</div>
+          <div className="stat-card-icon">{'★'}</div>
+          <div className="stat-card-label">
+            Top 10 Score Medio
+            <InfoTooltip metricKey="top_10_avg" />
+          </div>
           <div className="stat-card-value">{stats.top_10_avg?.toFixed(1) || '—'}</div>
           <div className="stat-card-detail">Media score delle migliori 10 posizioni</div>
         </div>
         <div className="stat-card">
-          <div className="stat-card-icon">💰</div>
-          <div className="stat-card-label">Valore Totale Portafogli</div>
+          <div className="stat-card-icon">{'$'}</div>
+          <div className="stat-card-label">
+            Valore Totale Portafogli
+            <InfoTooltip metricKey="total_portfolio_value" />
+          </div>
           <div className="stat-card-value">{meta.total_portfolio_value != null ? formatCurrency(meta.total_portfolio_value) : 'N/A'}</div>
           <div className="stat-card-detail">AUM combinato degli investitori</div>
         </div>
+      </div>
+
+      {/* Compact Buy/Sell Signals */}
+      <div className="section">
+        <h2 className="section-title">{'⇅'} Segnali Rapidi</h2>
+        <BuySellSignals data={buySellData} compact />
       </div>
 
       <div className="dashboard-grid">
         {/* Top 10 Picks */}
         <div className="card full-width">
           <div className="card-header">
-            <h2 className="card-title">★ Top 10 Picks</h2>
-            <span className="card-subtitle">Titoli con il punteggio complessivo più alto</span>
+            <h2 className="card-title">{'★'} Top 10 Picks</h2>
+            <span className="card-subtitle">Titoli con il punteggio complessivo piu' alto</span>
           </div>
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Ticker</th>
+                  <th>Ticker <InfoTooltip metricKey="ticker" /></th>
                   <th>Azienda</th>
-                  <th>Score</th>
-                  <th>Consenso</th>
-                  <th>Convinzione</th>
-                  <th>Investitori</th>
-                  <th>Peso Medio</th>
-                  <th>Settore</th>
+                  <th>Score <InfoTooltip metricKey="overall_score" /></th>
+                  <th>Consenso <InfoTooltip metricKey="consensus_score" /></th>
+                  <th>Convinzione <InfoTooltip metricKey="conviction_score" /></th>
+                  <th>Investitori <InfoTooltip metricKey="investors_holding" /></th>
+                  <th>Peso Medio <InfoTooltip metricKey="avg_portfolio_weight" /></th>
+                  <th>Settore <InfoTooltip metricKey="sector" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -124,7 +150,7 @@ export default function Dashboard({ summary, holdings }) {
         {/* Sell Signals */}
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">⚠ Segnali di Vendita</h2>
+            <h2 className="card-title">{'▼'} Segnali di Vendita</h2>
           </div>
           {sellSignals.length === 0 ? (
             <div className="no-data">Nessun segnale di vendita significativo</div>
@@ -147,7 +173,7 @@ export default function Dashboard({ summary, holdings }) {
         {/* New Position Clusters */}
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">⊕ Cluster Nuove Posizioni</h2>
+            <h2 className="card-title">{'⊕'} Cluster Nuove Posizioni</h2>
           </div>
           {newClusters.length === 0 ? (
             <div className="no-data">Nessun cluster significativo</div>
@@ -171,7 +197,7 @@ export default function Dashboard({ summary, holdings }) {
         {/* Sector Distribution */}
         <div className="card full-width">
           <div className="card-header">
-            <h2 className="card-title">◐ Distribuzione Settoriale</h2>
+            <h2 className="card-title">{'◐'} Distribuzione Settoriale</h2>
             <span className="card-subtitle">Peso percentuale per settore tra tutti i portafogli</span>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
@@ -218,7 +244,7 @@ export default function Dashboard({ summary, holdings }) {
                       contentStyle={tooltipStyle}
                       formatter={(val) => [Number.isInteger(val) ? formatNumber(val) : `${val.toFixed(1)}%`, Number.isInteger(val) ? 'Titoli' : 'Peso']}
                     />
-                    <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="value" fill="#666666" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -9,6 +9,8 @@ import NewPositions from './components/NewPositions';
 import ExitedPositions from './components/ExitedPositions';
 import ConvictionRanking from './components/ConvictionRanking';
 import InvestorDetail from './components/InvestorDetail';
+import BuySellSignals from './components/BuySellSignals';
+import GuidaUtilizzo from './components/GuidaUtilizzo';
 import './App.css';
 
 function AppContent() {
@@ -43,6 +45,8 @@ function AppContent() {
     switch (activePage) {
       case 'dashboard':
         return <Dashboard summary={data.summary} holdings={data.allHoldings} />;
+      case 'buy-sell':
+        return <BuySellSignals data={{ allHoldings: data.allHoldings, summary: data.summary }} />;
       case 'top-holdings':
         return <TopHoldings data={data} />;
       case 'consensus':
@@ -55,6 +59,8 @@ function AppContent() {
         return <ConvictionRanking data={data} />;
       case 'investor-detail':
         return <InvestorDetail data={data} />;
+      case 'guida':
+        return <GuidaUtilizzo />;
       default:
         return <Dashboard summary={data.summary} holdings={data.allHoldings} />;
     }

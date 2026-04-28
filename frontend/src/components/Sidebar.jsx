@@ -3,12 +3,14 @@ import ViewToggle from './ViewToggle';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '◉' },
+  { id: 'buy-sell', label: 'Segnali Compra/Vendi', icon: '⇅' },
   { id: 'top-holdings', label: 'Top Holdings', icon: '★' },
   { id: 'consensus', label: 'Consensus Picks', icon: '◎' },
   { id: 'new-positions', label: 'Nuove Posizioni', icon: '⊕' },
   { id: 'exited', label: 'Posizioni Chiuse', icon: '⊖' },
   { id: 'conviction', label: 'Ranking Convinzione', icon: '▰' },
   { id: 'investor-detail', label: 'Dettaglio Investitori', icon: '⊙' },
+  { id: 'guida', label: 'Guida', icon: '?' },
 ];
 
 export default function Sidebar({ activePage, setActivePage, isOpen, onClose, lastUpdated }) {

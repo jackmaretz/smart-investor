@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { formatPercent, formatCurrency, getScoreClass } from './DataTable';
+import InfoTooltip from './InfoTooltip';
 
 export default function ConvictionRanking({ data }) {
   const { allHoldings } = data;
@@ -50,7 +51,7 @@ export default function ConvictionRanking({ data }) {
 
       {/* Top conviction per investor */}
       <div className="section">
-        <h2 className="section-title">🏆 Massima Convinzione per Investitore</h2>
+        <h2 className="section-title">{'★'} Massima Convinzione per Investitore</h2>
         <p className="page-subtitle" style={{ marginBottom: 'var(--spacing-md)' }}>
           La posizione con il peso maggiore nel portafoglio di ciascun investitore
         </p>
@@ -63,10 +64,10 @@ export default function ConvictionRanking({ data }) {
                 <th>Fondo</th>
                 <th>Ticker</th>
                 <th>Azienda</th>
-                <th>Peso Portafoglio</th>
+                <th>Peso Portafoglio <InfoTooltip metricKey="avg_portfolio_weight" /></th>
                 <th>Valore</th>
-                <th>Score</th>
-                <th>Settore</th>
+                <th>Score <InfoTooltip metricKey="overall_score" /></th>
+                <th>Settore <InfoTooltip metricKey="sector" /></th>
               </tr>
             </thead>
             <tbody>
@@ -89,7 +90,7 @@ export default function ConvictionRanking({ data }) {
                         <div style={{
                           width: `${Math.min(e.portfolio_weight * 2, 100)}%`,
                           height: '100%',
-                          background: e.portfolio_weight > 20 ? 'var(--positive)' : e.portfolio_weight > 10 ? 'var(--accent-primary)' : 'var(--warning)',
+                          background: e.portfolio_weight > 20 ? 'var(--positive)' : e.portfolio_weight > 10 ? '#666666' : 'var(--warning)',
                           borderRadius: '4px'
                         }} />
                       </div>
@@ -124,11 +125,11 @@ export default function ConvictionRanking({ data }) {
                 <th>Investitore</th>
                 <th>Ticker</th>
                 <th>Azienda</th>
-                <th>Peso %</th>
+                <th>Peso % <InfoTooltip metricKey="avg_portfolio_weight" /></th>
                 <th>Valore</th>
-                <th>Score Conv.</th>
-                <th>Score Tot.</th>
-                <th>Settore</th>
+                <th>Score Conv. <InfoTooltip metricKey="conviction_score" /></th>
+                <th>Score Tot. <InfoTooltip metricKey="overall_score" /></th>
+                <th>Settore <InfoTooltip metricKey="sector" /></th>
               </tr>
             </thead>
             <tbody>

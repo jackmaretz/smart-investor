@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { formatCurrency, formatPercent, getScoreClass } from './DataTable';
+import InfoTooltip from './InfoTooltip';
 
 export default function NewPositions({ data }) {
   const { allHoldings } = data;
@@ -38,7 +39,8 @@ export default function NewPositions({ data }) {
           {strongClusters.length > 0 && (
             <div className="section">
               <h2 className="section-title">
-                <span style={{ color: 'var(--positive)' }}>●●●</span> Cluster Forti (3+ investitori)
+                <span style={{ color: 'var(--positive)' }}>{'●●●'}</span> Cluster Forti (3+ investitori)
+                <InfoTooltip metricKey="new_position_bonus" />
               </h2>
               {strongClusters.map(h => (
                 <ClusterCard key={h.ticker} holding={h} strength="strong" />
@@ -50,7 +52,7 @@ export default function NewPositions({ data }) {
           {moderateClusters.length > 0 && (
             <div className="section">
               <h2 className="section-title">
-                <span style={{ color: 'var(--warning)' }}>●●</span> Cluster Moderati (2 investitori)
+                <span style={{ color: 'var(--warning)' }}>{'●●'}</span> Cluster Moderati (2 investitori)
               </h2>
               {moderateClusters.map(h => (
                 <ClusterCard key={h.ticker} holding={h} strength="moderate" />
@@ -62,18 +64,19 @@ export default function NewPositions({ data }) {
           {singleNew.length > 0 && (
             <div className="section">
               <h2 className="section-title">
-                <span style={{ color: 'var(--text-tertiary)' }}>●</span> Posizioni Singole
+                <span style={{ color: 'var(--text-tertiary)' }}>{'●'}</span> Posizioni Singole
               </h2>
               <div className="table-container">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Ticker</th>
+                      <th>Ticker <InfoTooltip metricKey="ticker" /></th>
                       <th>Azienda</th>
-                      <th>Score</th>
+                      <th>Score <InfoTooltip metricKey="overall_score" /></th>
                       <th>Investitore</th>
-                      <th>Peso Portafoglio</th>
-                      <th>Settore</th>
+                      <th>Peso Portafoglio <InfoTooltip metricKey="avg_portfolio_weight" /></th>
+                      <th>Valore</th>
+                      <th>Settore <InfoTooltip metricKey="sector" /></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -88,6 +91,7 @@ export default function NewPositions({ data }) {
                         </td>
                         <td>{h.newHolders[0]?.investor_name || '—'}</td>
                         <td>{formatPercent(h.newHolders[0]?.portfolio_weight)}</td>
+                        <td>{formatCurrency(h.newHolders[0]?.value)}</td>
                         <td><span className="badge badge-sector">{h.sector}</span></td>
                       </tr>
                     ))}
@@ -146,6 +150,12 @@ function ClusterCard({ holding, strength }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Cluster summary */}
+      <div style={{ marginTop: 'var(--spacing-sm)', fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-light)', paddingTop: 'var(--spacing-sm)' }}>
+        Forza cluster: {h.newCount} investitori · Settore: {h.sector}
+        {h.total_value_held ? ` · Valore totale: ${formatCurrency(h.total_value_held)}` : ''}
       </div>
     </div>
   );

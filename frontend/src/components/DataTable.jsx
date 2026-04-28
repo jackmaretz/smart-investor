@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import InfoTooltip from './InfoTooltip';
 
 // --- Number formatting utilities ---
 
@@ -96,6 +97,7 @@ export default function DataTable({
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {col.label}
+                  {col.tooltipKey && <InfoTooltip metricKey={col.tooltipKey} />}
                   {onSort && (
                     <span className="sort-indicator">
                       {isSorted ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}

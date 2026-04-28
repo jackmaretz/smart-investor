@@ -33,7 +33,7 @@ from edgar_client import (
     get_13f_filings,
     verify_cik,
 )
-from enrichment import enrich_holdings
+from enrichment import enrich_holdings, resolve_tickers_openfigi, resolve_tickers_by_name
 from parser_13f import compare_quarters, parse_infotable_xml
 from scoring import (
     aggregate_holdings,
@@ -356,13 +356,53 @@ def run(
     stock_map = aggregate_holdings(all_investor_holdings)
 
     # ------------------------------------------------------------------
-    # 4. Enrich with yfinance data
+    # 4a. Resolve tickers (CUSIP -> ticker via OpenFIGI, then name fallback)
     # ------------------------------------------------------------------
-    # Flatten for enrichment then re-aggregate
     all_holdings_flat: list[dict[str, Any]] = []
     for inv in all_investor_holdings:
         all_holdings_flat.extend(inv.get("holdings", []))
 
+    logger.info(
+        "Resolving tickers for %d holding records", len(all_holdings_flat)
+    )
+
+    # Primary: OpenFIGI batch CUSIP lookup (fast, high coverage)
+    try:
+        resolve_tickers_openfigi(all_holdings_flat)
+    except Exception:
+        logger.exception(
+            "OpenFIGI resolution failed — continuing without it"
+        )
+
+    # Count how many still lack a ticker
+    missing_before = sum(1 for h in all_holdings_flat if not h.get("ticker"))
+    logger.info(
+        "After OpenFIGI: %d / %d holdings still missing ticker",
+        missing_before,
+        len(all_holdings_flat),
+    )
+
+    # Fallback: yfinance name search for remaining (slow, low volume)
+    if missing_before > 0:
+        try:
+            resolve_tickers_by_name(all_holdings_flat)
+        except Exception:
+            logger.exception(
+                "Name-search resolution failed — continuing without it"
+            )
+
+    missing_after = sum(1 for h in all_holdings_flat if not h.get("ticker"))
+    logger.info(
+        "Ticker resolution complete: %d / %d holdings have tickers "
+        "(%d still missing)",
+        len(all_holdings_flat) - missing_after,
+        len(all_holdings_flat),
+        missing_after,
+    )
+
+    # ------------------------------------------------------------------
+    # 4b. Enrich with yfinance data
+    # ------------------------------------------------------------------
     logger.info("Enriching %d holding records via yfinance", len(all_holdings_flat))
     enrich_holdings(all_holdings_flat, force=force)
 

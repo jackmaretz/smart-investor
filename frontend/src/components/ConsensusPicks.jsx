@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import DataTable, { formatPercent, formatCurrency, getScoreClass } from './DataTable';
+import InfoTooltip from './InfoTooltip';
 
 export default function ConsensusPicks({ data }) {
   const { allHoldings, sortKey, sortDir, setSort } = data;
@@ -23,6 +24,7 @@ export default function ConsensusPicks({ data }) {
     {
       key: 'ticker',
       label: 'Ticker',
+      tooltipKey: 'ticker',
       render: (val) => <span className="ticker-cell">{val}</span>
     },
     {
@@ -32,6 +34,7 @@ export default function ConsensusPicks({ data }) {
     {
       key: 'consensus_score',
       label: 'Score Consenso',
+      tooltipKey: 'consensus_score',
       render: (val) => (
         <span className={`score-badge ${getScoreClass(val)}`}>{val}</span>
       )
@@ -39,14 +42,17 @@ export default function ConsensusPicks({ data }) {
     {
       key: 'investors_holding',
       label: '# Investitori',
+      tooltipKey: 'investors_holding',
     },
     {
       key: 'total_investors',
       label: 'Totale Monitorati',
+      tooltipKey: 'total_investors',
     },
     {
       key: 'investors_holding',
       label: '% Accordo',
+      tooltipKey: 'agreement_pct',
       render: (val, row) => {
         const pct = row.total_investors ? ((val / row.total_investors) * 100) : 0;
         return (
@@ -73,11 +79,13 @@ export default function ConsensusPicks({ data }) {
     {
       key: 'avg_portfolio_weight',
       label: 'Peso Medio',
+      tooltipKey: 'avg_portfolio_weight',
       render: (val) => formatPercent(val)
     },
     {
       key: 'overall_score',
       label: 'Score Complessivo',
+      tooltipKey: 'overall_score',
       render: (val) => (
         <span className={`score-badge ${getScoreClass(val)}`}>{val?.toFixed(1)}</span>
       )
@@ -85,15 +93,16 @@ export default function ConsensusPicks({ data }) {
     {
       key: 'sector',
       label: 'Settore',
+      tooltipKey: 'sector',
       render: (val) => <span className="badge badge-sector">{val}</span>
     }
   ];
 
-  // Give unique keys to columns
+  // Give unique keys to columns (for duplicate key issue on investors_holding)
   const columnsWithKeys = columns.map((c, i) => ({
     ...c,
     key: c.label === '% Accordo' ? '_agreement_pct' : c.key,
-    _sortKey: c.key
+    _sortKey: c.key,
   }));
 
   return (

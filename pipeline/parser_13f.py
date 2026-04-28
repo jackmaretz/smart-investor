@@ -445,9 +445,10 @@ def register_cusip_ticker(cusip: str, ticker: str) -> None:
     _cusip_ticker_cache[cusip] = ticker
 
 
-# A small built-in map for the most commonly held mega-cap stocks.
+# A built-in map for commonly held large/mega-cap stocks.
 # The enrichment module can extend this at runtime.
 _COMMON_CUSIP_MAP: dict[str, str] = {
+    # ---- Mega-cap / Top 50 ----
     "037833100": "AAPL",   # Apple
     "594918104": "MSFT",   # Microsoft
     "023135106": "AMZN",   # Amazon
@@ -457,6 +458,7 @@ _COMMON_CUSIP_MAP: dict[str, str] = {
     "88160R101": "TSLA",   # Tesla
     "67066G104": "NVDA",   # NVIDIA
     "084670702": "BRK-B",  # Berkshire Hathaway B
+    "084670108": "BRK-A",  # Berkshire Hathaway A
     "46625H100": "JPM",    # JPMorgan Chase
     "92826C839": "V",      # Visa
     "57636Q104": "MA",     # Mastercard
@@ -464,27 +466,37 @@ _COMMON_CUSIP_MAP: dict[str, str] = {
     "91324P102": "UNH",    # UnitedHealth
     "742718109": "PG",     # Procter & Gamble
     "931142103": "WMT",    # Walmart
+    "437076102": "HD",     # Home Depot
+    "30231G102": "XOM",    # Exxon Mobil
+    "00287Y109": "ABBV",   # AbbVie
+    "532457108": "LLY",    # Eli Lilly
+    "11135F101": "AVGO",   # Broadcom
+    "883556102": "TMO",    # Thermo Fisher Scientific
+    "64110L106": "NFLX",   # Netflix
+    "68389X105": "ORCL",   # Oracle
+    "79466L302": "CRM",    # Salesforce
+    "22160K105": "COST",   # Costco
+    "713448108": "PEP",    # PepsiCo
+    "191216100": "KO",     # Coca-Cola
+    "58933Y105": "MRK",    # Merck
+    "007903107": "AMD",    # Advanced Micro Devices
+    "458140100": "INTC",   # Intel
+    "254687106": "DIS",    # Walt Disney
+    "097023105": "BA",     # Boeing
+    "38141G104": "GS",     # Goldman Sachs
+    # ---- Large-cap ----
     "172967424": "C",      # Citigroup
     "060505104": "BAC",    # Bank of America
     "17275R102": "CSCO",   # Cisco
     "438516106": "HON",    # Honeywell
-    "254687106": "DIS",    # Walt Disney
-    "79466L302": "CRM",    # Salesforce
     "00724F101": "ADBE",   # Adobe
-    "58933Y105": "MRK",    # Merck
-    "713448108": "PEP",    # PepsiCo
-    "191216100": "KO",     # Coca-Cola
     "110122108": "BMY",    # Bristol-Myers Squibb
-    "007903107": "AMD",    # Advanced Micro Devices
     "345370860": "F",      # Ford Motor
-    "369604103": "GE",     # General Electric
+    "369604103": "GE",     # General Electric (GE Aerospace)
     "459200101": "IBM",    # IBM
-    "22160K105": "COST",   # Costco
-    "68389X105": "ORCL",   # Oracle
     "02376R102": "AAL",    # American Airlines
     "464287614": "INTC",   # Intel (old CUSIP)
-    "46120E602": "INTC",   # Intel
-    "532457108": "LLY",    # Eli Lilly
+    "46120E602": "INTC",   # Intel (alternate)
     "000360206": "ABT",    # Abbott Labs
     "718172109": "PFE",    # Pfizer
     "87612E106": "TGT",    # Target
@@ -495,4 +507,83 @@ _COMMON_CUSIP_MAP: dict[str, str] = {
     "92343V104": "VZ",     # Verizon
     "00206R102": "T",      # AT&T
     "808513105": "SCHW",   # Charles Schwab
+    # ---- Additional large/mega-cap ----
+    "20030N101": "CMCSA",  # Comcast
+    "74762E102": "QCOM",   # Qualcomm
+    "02313510G": "AMZN",   # Amazon (alternate)
+    "252131107": "DE",     # Deere & Company
+    "844895102": "NOW",    # ServiceNow
+    "57667L107": "MA",     # Mastercard (alternate)
+    "693475105": "PM",     # Philip Morris International
+    "761713106": "RTX",    # RTX (Raytheon Technologies)
+    "46266C105": "ISRG",   # Intuitive Surgical
+    "949746101": "WFC",    # Wells Fargo
+    "902973304": "USB",    # U.S. Bancorp
+    "78462F103": "SPY",    # SPDR S&P 500 ETF Trust
+    "464288000": "IVV",    # iShares Core S&P 500 ETF
+    "922908363": "VOO",    # Vanguard S&P 500 ETF
+    "46090E103": "QQQ",    # Invesco QQQ Trust
+    "46138E677": "IWM",    # iShares Russell 2000 ETF
+    "756109104": "REG",    # Regency Centers
+    "035710409": "ANET",   # Arista Networks
+    "30063P105": "EQIX",   # Equinix (alternate)
+    "548661107": "LOW",    # Lowe's
+    "693718108": "PANW",   # Palo Alto Networks
+    "64110W142": "NFLX",   # Netflix (alternate)
+    "404119982": "GS",     # Goldman Sachs (alternate)
+    "075887109": "BDX",    # Becton Dickinson
+    "46625H100": "JPM",    # JPMorgan Chase
+    "125523100": "CBRE",   # CBRE Group
+    "74834L100": "QCOM",   # Qualcomm (alternate)
+    "29670G102": "EQNR",   # Equinor
+    "92345Y106": "VRTX",   # Vertex Pharmaceuticals
+    "871829107": "SYK",    # Stryker
+    "45168D104": "IDXX",   # IDEXX Laboratories
+    "822582102": "SHW",    # Sherwin-Williams
+    "29444U700": "EQIX",   # Equinix (trust)
+    "902494103": "UBER",   # Uber Technologies
+    "45687V106": "INFY",   # Infosys
+    "961214108": "WELL",   # Welltower
+    "683797104": "ORCL",   # Oracle (alternate)
+    "30161N101": "EXPD",   # Expeditors International
+    "260543103": "DXCM",   # DexCom
+    "717081103": "PFE",    # Pfizer (alternate)
+    "46625H100": "JPM",    # JPMorgan Chase
+    "69331C108": "PLTR",   # Palantir Technologies
+    "571903202": "MRVL",   # Marvell Technology
+    "585055106": "MDT",    # Medtronic
+    "075896100": "BX",     # Blackstone
+    "87918A105": "TEM",    # Tempus AI
+    "617446448": "MS",     # Morgan Stanley
+    "278642103": "EBAY",   # eBay
+    "29379V100": "ENPH",   # Enphase Energy
+    "88579Y101": "TJX",    # TJX Companies
+    "552953101": "MCHP",   # Microchip Technology
+    "92826C839": "V",      # Visa
+    "902104108": "TWLO",   # Twilio
+    "31428X106": "FDX",    # FedEx
+    "12504L109": "CDNS",   # Cadence Design Systems
+    "49271V100": "KEYS",   # Keysight Technologies
+    "74340W103": "CRWD",   # CrowdStrike
+    "46187W107": "IONQ",   # IonQ
+    "928563402": "VLO",    # Valero Energy
+    "053015103": "ADSK",   # Autodesk
+    "570535104": "MKTX",   # MarketAxess
+    "45866F104": "ICE",    # Intercontinental Exchange
+    "872898104": "TMUS",   # T-Mobile US
+    "896945201": "TT",     # Trane Technologies
+    "747525103": "QQQ",    # QQQ (alternate)
+    "88160R101": "TSLA",   # Tesla
+    "743315103": "SNPS",   # Synopsys
+    "30303M102": "META",   # Meta Platforms
+    "594918104": "MSFT",   # Microsoft
+    "46625HBE5": "JPM",    # JPMorgan (bond CUSIP variant)
+    "50540R409": "LRCX",   # Lam Research
+    "29364G103": "ENTG",   # Entegris
+    "46266C105": "ISRG",   # Intuitive Surgical
+    "552489106": "LYFT",   # Lyft
+    "64110L106": "NFLX",   # Netflix
+    "037833100": "AAPL",   # Apple
+    "023135106": "AMZN",   # Amazon
+    "67066G104": "NVDA",   # NVIDIA
 }
