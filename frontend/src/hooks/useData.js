@@ -1,5 +1,202 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 
+// ---------- NORMALIZATION LAYER ----------
+// Maps real pipeline output to the format the frontend components expect.
+
+/**
+ * Detect if summary data is in pipeline format (has `quarter` at top level)
+ * and normalize it to the structure components expect.
+ */
+function normalizeSummary(raw) {
+  if (!raw) return raw;
+
+  // Already in expected format (has metadata nested object)
+  if (raw.metadata && raw.metadata.quarter) return raw;
+
+  // Pipeline format detected — transform
+  const topPicks = (raw.top_picks || []).map(p => ({
+    ticker: p.ticker || '',
+    company: p.name || p.nameOfIssuer || '',
+    overall_score: p.overall_score ?? 0,
+    consensus_score: p.consensus ?? 0,
+    conviction_score: p.conviction ?? 0,
+    investors_holding: p.holder_count ?? 0,
+    avg_portfolio_weight: null, // not available in pipeline
+    sector: p.sector || 'Unknown',
+    market_cap_category: p.market_cap_category || 'Unknown',
+    price: p.current_price ?? null,
+    rank: p.rank,
+    new_position_count: p.new_position_count ?? 0,
+    is_new_position_cluster: (p.new_position_count ?? 0) >= 3,
+  }));
+
+  // Compute top_10_avg from top_picks
+  const top10 = topPicks.slice(0, 10);
+  const top10Avg = top10.length > 0
+    ? top10.reduce((sum, p) => sum + (p.overall_score || 0), 0) / top10.length
+    : null;
+
+  const sellSignals = (raw.sell_signals || []).map(s => ({
+    ticker: s.ticker || '',
+    company: s.nameOfIssuer || '',
+    overall_score: null, // not available in pipeline
+    investors_selling: s.exit_count ?? 0,
+    avg_reduction: null, // not available in pipeline
+    sector: s.sector || 'Unknown',
+    exiting_investors: s.exiting_investors || [],
+  }));
+
+  // Derive new_position_clusters from top_picks with new_position_count >= 3
+  const newPositionClusters = topPicks
+    .filter(p => (p.new_position_count ?? 0) >= 3)
+    .map(p => ({
+      ticker: p.ticker,
+      company: p.company,
+      investors_entering: p.new_position_count,
+      avg_initial_weight: null, // not available
+      sector: p.sector,
+    }));
+
+  return {
+    metadata: {
+      last_updated: raw.generated_at || null,
+      quarter: raw.quarter || 'N/A',
+      investors_analyzed: raw.investor_count ?? 0,
+      unique_holdings: raw.total_unique_stocks ?? 0,
+      total_portfolio_value: null, // not available in pipeline
+    },
+    stats: {
+      top_10_avg: top10Avg,
+      avg_score: null,
+      median_score: null,
+    },
+    top_picks: topPicks,
+    sell_signals: sellSignals,
+    new_position_clusters: newPositionClusters,
+    sector_distribution: raw.sector_distribution || {},
+    market_cap_distribution: raw.market_cap_distribution || {},
+  };
+}
+
+/**
+ * Detect if holdings data is a flat array (pipeline format)
+ * and normalize it to { holdings: [...], investors: [...] }.
+ */
+function normalizeHoldings(raw, investorCount) {
+  if (!raw) return raw;
+
+  // Already in expected format (object with holdings key)
+  if (!Array.isArray(raw) && raw.holdings) return raw;
+
+  // Pipeline format detected: flat array of holdings
+  const rawArray = Array.isArray(raw) ? raw : [];
+  const totalInvestors = investorCount || 0;
+
+  const holdings = rawArray.map(h => {
+    const enrichment = h.enrichment || {};
+    const scores = h.scores || {};
+
+    return {
+      ticker: h.ticker || '',
+      company: h.nameOfIssuer || '',
+      cusip: h.cusip || '',
+      sector: enrichment.sector || 'Unknown',
+      industry: enrichment.industry || 'Unknown',
+      market_cap_category: enrichment.marketCapCategory || 'Unknown',
+      market_cap: enrichment.marketCap ?? null,
+      price: enrichment.currentPrice ?? null,
+      pe_ratio: enrichment.peRatio ?? null,
+      revenue_growth: enrichment.revenueGrowth ?? null,
+      profit_margin: enrichment.profitMargin ?? null,
+      high_52w: enrichment.high52w ?? null,
+      low_52w: enrichment.low52w ?? null,
+      overall_score: scores.overall ?? 0,
+      consensus_score: scores.consensus ?? 0,
+      conviction_score: scores.conviction ?? 0,
+      momentum_score: scores.momentum_alignment ?? 0,
+      new_position_bonus: scores.new_position_bonus ?? 0,
+      investors_holding: h.holder_count ?? 0,
+      total_investors: totalInvestors,
+      avg_portfolio_weight: null, // not directly available
+      total_value_held: h.total_value ?? null,
+      quarter_change: deriveQuarterChange(h.holders),
+      holders: (h.holders || []).map(hld => ({
+        investor_name: hld.investor_name || '',
+        fund: hld.investor_name || '', // fund not available, use investor_name
+        shares: hld.shares ?? 0,
+        value: hld.value ?? 0,
+        portfolio_weight: hld.portfolio_weight ?? 0,
+        change_type: hld.change_type || 'unchanged',
+        shares_change_pct: null, // not available in pipeline
+        quality_weight: hld.quality_weight ?? null,
+      })),
+      new_position_count: h.new_position_count ?? 0,
+    };
+  });
+
+  // Derive investors array from holdings data (group holders by investor_name)
+  const investorMap = {};
+  holdings.forEach(h => {
+    (h.holders || []).forEach(hld => {
+      const name = hld.investor_name;
+      if (!name) return;
+      if (!investorMap[name]) {
+        investorMap[name] = {
+          name: name,
+          fund: hld.fund || name,
+          cik: '',
+          category: '',
+          total_holdings: 0,
+          portfolio_value: 0,
+          top_5_weight: 0,
+          new_positions: [],
+          exited_positions: [],
+          increased_positions: [],
+          decreased_positions: [],
+          _weights: [],
+        };
+      }
+      const inv = investorMap[name];
+      inv.total_holdings += 1;
+      inv.portfolio_value += hld.value || 0;
+      inv._weights.push(hld.portfolio_weight || 0);
+
+      if (hld.change_type === 'new') {
+        inv.new_positions.push({ ticker: h.ticker, value: hld.value || 0 });
+      } else if (hld.change_type === 'exited') {
+        inv.exited_positions.push({ ticker: h.ticker, prev_value: hld.value || 0 });
+      } else if (hld.change_type === 'increased') {
+        inv.increased_positions.push({ ticker: h.ticker, value: hld.value || 0, shares_change_pct: hld.shares_change_pct ?? null });
+      } else if (hld.change_type === 'decreased') {
+        inv.decreased_positions.push({ ticker: h.ticker, value: hld.value || 0, shares_change_pct: hld.shares_change_pct ?? null });
+      }
+    });
+  });
+
+  // Compute top_5_weight for each investor
+  const investors = Object.values(investorMap).map(inv => {
+    const sortedWeights = inv._weights.sort((a, b) => b - a);
+    inv.top_5_weight = sortedWeights.slice(0, 5).reduce((s, w) => s + w, 0);
+    delete inv._weights;
+    return inv;
+  }).sort((a, b) => b.portfolio_value - a.portfolio_value);
+
+  return { holdings, investors };
+}
+
+/**
+ * Derive overall quarter_change from holders' change_types.
+ */
+function deriveQuarterChange(holders) {
+  if (!holders || holders.length === 0) return 'unchanged';
+  const types = holders.map(h => h.change_type);
+  if (types.includes('new')) return 'increased';
+  if (types.every(t => t === 'exited')) return 'decreased';
+  if (types.includes('increased') && !types.includes('decreased')) return 'increased';
+  if (types.includes('decreased') && !types.includes('increased')) return 'decreased';
+  return 'unchanged';
+}
+
 // ---------- SAMPLE DATA ----------
 const SAMPLE_SUMMARY = {
   metadata: {
@@ -328,19 +525,22 @@ export default function useData() {
     async function load() {
       try {
         const base = import.meta.env.BASE_URL || '/';
-        const [sum, hld] = await Promise.all([
+        const [rawSum, rawHld] = await Promise.all([
           fetchJSON(`${base}data/summary.json`),
           fetchJSON(`${base}data/holdings.json`)
         ]);
         if (!cancelled) {
-          setSummary(sum);
-          setHoldingsData(hld);
+          const normalizedSum = normalizeSummary(rawSum);
+          const investorCount = normalizedSum?.metadata?.investors_analyzed || 0;
+          const normalizedHld = normalizeHoldings(rawHld, investorCount);
+          setSummary(normalizedSum);
+          setHoldingsData(normalizedHld);
         }
       } catch {
-        // Use sample data
+        // Use sample data (already in expected format, but normalize for safety)
         if (!cancelled) {
-          setSummary(SAMPLE_SUMMARY);
-          setHoldingsData(SAMPLE_HOLDINGS);
+          setSummary(normalizeSummary(SAMPLE_SUMMARY));
+          setHoldingsData(normalizeHoldings(SAMPLE_HOLDINGS));
         }
       } finally {
         if (!cancelled) setLoading(false);

@@ -61,7 +61,7 @@ export default function InvestorDetail({ data }) {
           <option value="">— Seleziona un investitore —</option>
           {investors.map(inv => (
             <option key={inv.name} value={inv.name}>
-              {inv.name} ({inv.fund})
+              {inv.name}{inv.fund && inv.fund !== inv.name ? ` (${inv.fund})` : ''}
             </option>
           ))}
         </select>
@@ -80,9 +80,11 @@ export default function InvestorDetail({ data }) {
               <div className="stat-card-value" style={{ fontSize: 'var(--font-size-lg)' }}>
                 {investor.fund}
               </div>
-              <div className="stat-card-detail">
-                Strategia: <span className="badge badge-sector">{categoryLabel(investor.category)}</span>
-              </div>
+              {investor.category ? (
+                <div className="stat-card-detail">
+                  Strategia: <span className="badge badge-sector">{categoryLabel(investor.category)}</span>
+                </div>
+              ) : null}
             </div>
             <div className="stat-card">
               <div className="stat-card-label">Valore Portafoglio</div>
@@ -225,7 +227,7 @@ export default function InvestorDetail({ data }) {
                           </td>
                           <td>
                             <span className={`score-badge ${getScoreClass(h.overall_score)}`}>
-                              {h.overall_score.toFixed(1)}
+                              {h.overall_score != null ? h.overall_score.toFixed(1) : '—'}
                             </span>
                           </td>
                           <td><span className="badge badge-sector">{h.sector}</span></td>

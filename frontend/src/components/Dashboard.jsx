@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { formatCurrency, formatNumber, getScoreClass, getChangeIndicator, formatPercent } from './DataTable';
+import { formatCurrency, formatNumber, formatPercent, getScoreClass, getChangeIndicator } from './DataTable';
 import { useTheme } from '../context/ThemeContext';
 
 const PIE_COLORS = [
@@ -63,7 +63,7 @@ export default function Dashboard({ summary, holdings }) {
         <div className="stat-card">
           <div className="stat-card-icon">💰</div>
           <div className="stat-card-label">Valore Totale Portafogli</div>
-          <div className="stat-card-value">{formatCurrency(meta.total_portfolio_value)}</div>
+          <div className="stat-card-value">{meta.total_portfolio_value != null ? formatCurrency(meta.total_portfolio_value) : 'N/A'}</div>
           <div className="stat-card-detail">AUM combinato degli investitori</div>
         </div>
       </div>
@@ -112,7 +112,7 @@ export default function Dashboard({ summary, holdings }) {
                       </span>
                     </td>
                     <td>{h.investors_holding}</td>
-                    <td>{formatPercent(h.avg_portfolio_weight)}</td>
+                    <td>{h.avg_portfolio_weight != null ? formatPercent(h.avg_portfolio_weight) : '—'}</td>
                     <td><span className="badge badge-sector">{h.sector}</span></td>
                   </tr>
                 ))}
@@ -135,8 +135,9 @@ export default function Dashboard({ summary, holdings }) {
                   {s.ticker} — {s.company}
                 </div>
                 <div className="alert-body">
-                  {s.investors_selling} investitori in vendita · Riduzione media: {formatPercent(Math.abs(s.avg_reduction))}
-                  {' '}· Score: {s.overall_score.toFixed(1)}
+                  {s.investors_selling} investitori in vendita
+                  {s.avg_reduction != null ? ` · Riduzione media: ${formatPercent(Math.abs(s.avg_reduction))}` : ''}
+                  {s.overall_score != null ? ` · Score: ${s.overall_score.toFixed(1)}` : ''}
                 </div>
               </div>
             ))
@@ -160,7 +161,7 @@ export default function Dashboard({ summary, holdings }) {
                   <strong className="ticker-cell">{c.ticker}</strong> — {c.company}
                 </div>
                 <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  Settore: {c.sector} · Peso medio iniziale: {formatPercent(c.avg_initial_weight)}
+                  Settore: {c.sector}{c.avg_initial_weight != null ? ` · Peso medio iniziale: ${formatPercent(c.avg_initial_weight)}` : ''}
                 </div>
               </div>
             ))
@@ -193,7 +194,7 @@ export default function Dashboard({ summary, holdings }) {
                     </Pie>
                     <Tooltip
                       contentStyle={tooltipStyle}
-                      formatter={(val) => [`${val.toFixed(1)}%`, 'Peso']}
+                      formatter={(val) => [Number.isInteger(val) ? formatNumber(val) : `${val.toFixed(1)}%`, Number.isInteger(val) ? 'Titoli' : 'Peso']}
                     />
                     <Legend
                       wrapperStyle={{ fontSize: 'var(--font-size-xs)' }}
@@ -215,7 +216,7 @@ export default function Dashboard({ summary, holdings }) {
                     />
                     <Tooltip
                       contentStyle={tooltipStyle}
-                      formatter={(val) => [`${val.toFixed(1)}%`, 'Peso']}
+                      formatter={(val) => [Number.isInteger(val) ? formatNumber(val) : `${val.toFixed(1)}%`, Number.isInteger(val) ? 'Titoli' : 'Peso']}
                     />
                     <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                   </BarChart>
