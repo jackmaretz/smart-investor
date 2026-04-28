@@ -159,7 +159,7 @@ def enrich_ticker(ticker: str, *, force: bool = False) -> dict[str, Any]:
 
 _OPENFIGI_URL = "https://api.openfigi.com/v3/mapping"
 _OPENFIGI_BATCH_SIZE = 10  # max CUSIPs per request (API limit)
-_OPENFIGI_REQUESTS_PER_SEC = 4  # well under the 250/min free-tier cap
+_OPENFIGI_RATE_DELAY = 3.0  # seconds between requests (free tier: ~25 req/min)
 _CUSIP_TICKER_CACHE_FILE = CACHE_DIR / "cusip_ticker_cache.json"
 
 
@@ -262,8 +262,8 @@ def resolve_tickers_openfigi(holdings: list[dict[str, Any]]) -> None:
 
             if resp.status_code == 429:
                 # Rate-limited — back off and retry once
-                logger.warning("OpenFIGI rate-limited; backing off 15 s")
-                time.sleep(15)
+                logger.warning("OpenFIGI rate-limited; backing off 30 s")
+                time.sleep(30)
                 resp = requests.post(
                     _OPENFIGI_URL,
                     json=jobs,
@@ -345,7 +345,7 @@ def resolve_tickers_openfigi(holdings: list[dict[str, Any]]) -> None:
 
         # Rate-limit: ~4 requests per second
         if batch_idx < len(batches) - 1:
-            time.sleep(1.0 / _OPENFIGI_REQUESTS_PER_SEC)
+            time.sleep(_OPENFIGI_RATE_DELAY)
 
     # Persist cache to disk
     _save_cusip_ticker_cache(disk_cache)
