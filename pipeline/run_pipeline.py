@@ -271,6 +271,8 @@ def _build_summary(
                 "overall_score": s["scores"]["overall"],
                 "consensus": s["scores"]["consensus"],
                 "conviction": s["scores"]["conviction"],
+                "fundamental": s["scores"]["fundamental"],
+                "price_value": s["scores"]["price_value"],
                 "holder_count": s.get("holder_count", 0),
                 "new_position_count": s.get("new_position_count", 0),
                 "sector": (s.get("enrichment") or {}).get("sector", ""),
@@ -415,7 +417,9 @@ def run(
     # ------------------------------------------------------------------
     # 6. Identify sell signals
     # ------------------------------------------------------------------
-    sell_signals = identify_sell_signals(all_investor_holdings, min_exits=2)
+    sell_signals = identify_sell_signals(
+        all_investor_holdings, scored_stocks=scored, min_exits=2
+    )
 
     # ------------------------------------------------------------------
     # 7. Output JSON

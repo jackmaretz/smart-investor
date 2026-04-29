@@ -36,15 +36,17 @@ YFINANCE_CACHE_TTL_HOURS = 24  # hours before re-fetching ticker data
 
 # ---------------------------------------------------------------------------
 # Scoring weights (must sum to 1.0)
+# Tuned for long-term buy-and-hold strategy.
 # ---------------------------------------------------------------------------
 SCORING_WEIGHTS = {
-    "consensus": 0.30,
-    "conviction": 0.30,
-    "new_position_bonus": 0.15,
-    "momentum_alignment": 0.25,
+    "consensus": 0.25,
+    "conviction": 0.25,
+    "fundamental": 0.25,
+    "price_value": 0.15,
+    "new_position_bonus": 0.10,
 }
-NEW_POSITION_BONUS_THRESHOLD = 3  # min investors opening new position for bonus
-NEW_POSITION_BONUS_POINTS = 20
+NEW_POSITION_BONUS_THRESHOLD = 3
+NEW_POSITION_BONUS_POINTS = 15
 
 # ---------------------------------------------------------------------------
 # Logging

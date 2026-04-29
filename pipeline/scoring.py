@@ -1,30 +1,33 @@
 """
 Scoring engine for the Smart Investor pipeline.
 
-Computes per-stock scores based on how many top investors hold the stock,
-their conviction (portfolio weight), recent activity, and price momentum.
+Computes per-stock scores using five components:
+1. Consensus — how many quality investors hold the stock
+2. Conviction — average portfolio weight among holders
+3. Fundamental — P/E, revenue growth, profit margin
+4. Price-value — where current price sits vs 52-week range
+5. New position bonus — multiple investors opening new positions
+
+Designed for a long-term buy-and-hold strategy.
 """
 
 from __future__ import annotations
 
 import logging
 import statistics
-from typing import Any, Optional
+from typing import Any
 
 from config import (
     NEW_POSITION_BONUS_POINTS,
     NEW_POSITION_BONUS_THRESHOLD,
     SCORING_WEIGHTS,
 )
-from enrichment import get_price_history
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Investor quality weights — higher-quality track records get more influence
+# Investor quality weights
 # ---------------------------------------------------------------------------
-# These are subjective editorial weights (0.5 - 1.5).  They modulate how
-# much a given investor's presence counts towards the consensus score.
 _INVESTOR_QUALITY: dict[str, float] = {
     "Warren Buffett": 1.5,
     "Stanley Druckenmiller": 1.4,
@@ -32,7 +35,6 @@ _INVESTOR_QUALITY: dict[str, float] = {
     "Li Lu": 1.3,
     "Joel Greenblatt": 1.3,
     "Michael Burry": 1.1,
-    "Mohnish Pabrai": 1.2,
     "David Tepper": 1.3,
     "Bill Ackman": 1.2,
     "David Einhorn": 1.2,
@@ -51,6 +53,11 @@ _INVESTOR_QUALITY: dict[str, float] = {
     "Ken Griffin": 0.8,
     "Jim Simons": 0.8,
     "Ray Dalio": 0.9,
+    "Christopher Davis": 1.2,
+    "Frank Sands": 1.1,
+    "Steve Mandel": 1.1,
+    "Lee Ainslie": 1.0,
+    "Bill Miller": 1.0,
 }
 _DEFAULT_QUALITY = 1.0
 
@@ -68,23 +75,6 @@ def aggregate_holdings(
 ) -> dict[str, dict[str, Any]]:
     """
     Aggregate parsed holdings from all investors into a per-stock view.
-
-    Parameters
-    ----------
-    all_investor_holdings : list
-        Each item is a dict with keys ``investor_name``, ``holdings``
-        (list of holding dicts), and optionally ``changes`` (output of
-        ``compare_quarters``).
-
-    Returns
-    -------
-    dict
-        Keyed by CUSIP.  Each value contains:
-        - ``cusip``, ``nameOfIssuer``, ``ticker``
-        - ``holders``: list of dicts (investor_name, shares, value, change_type, portfolio_weight)
-        - ``holder_count``: int
-        - ``total_value``: sum of value across holders (in $thousands)
-        - ``new_position_count``: how many investors opened a new position this quarter
     """
     stock_map: dict[str, dict[str, Any]] = {}
 
@@ -93,7 +83,6 @@ def aggregate_holdings(
         holdings = inv.get("holdings", [])
         changes = inv.get("changes", {})
 
-        # Build a set of CUSIPs that are new positions for this investor
         new_cusips: set[str] = set()
         if changes:
             for h in changes.get("new", []):
@@ -101,7 +90,6 @@ def aggregate_holdings(
                 if c:
                     new_cusips.add(c)
 
-        # Calculate total portfolio value for this investor (for weight calc)
         total_portfolio_value = sum(h.get("value", 0) for h in holdings)
 
         for h in holdings:
@@ -149,10 +137,8 @@ def aggregate_holdings(
             if is_new:
                 stock_map[cusip]["new_position_count"] += 1
 
-            # Prefer enrichment data if available
             if h.get("enrichment") and not stock_map[cusip].get("enrichment"):
                 stock_map[cusip]["enrichment"] = h["enrichment"]
-            # Prefer a resolved ticker
             if h.get("ticker") and not stock_map[cusip]["ticker"]:
                 stock_map[cusip]["ticker"] = h["ticker"]
 
@@ -161,109 +147,145 @@ def aggregate_holdings(
 
 
 # ---------------------------------------------------------------------------
-# Individual score components
+# Score components
 # ---------------------------------------------------------------------------
 
-def _consensus_score(
-    stock: dict[str, Any], total_investors: int
-) -> float:
-    """
-    Fraction of tracked investors who hold this stock, weighted by
-    investor quality.  Normalised 0-100.
-    """
+def _consensus_score(stock: dict[str, Any], total_investors: int) -> float:
+    """Weighted fraction of tracked investors holding this stock. 0-100."""
     if total_investors == 0:
         return 0.0
-    weighted_count = sum(
-        h["quality_weight"] for h in stock["holders"]
-    )
-    # Maximum possible weighted count (if every investor held it)
-    max_weighted = total_investors * 1.5  # ceiling quality
+    weighted_count = sum(h["quality_weight"] for h in stock["holders"])
+    max_weighted = total_investors * 1.5
     raw = weighted_count / max_weighted * 100
     return min(raw, 100.0)
 
 
 def _conviction_score(stock: dict[str, Any]) -> float:
     """
-    Average portfolio weight across all holders, normalised 0-100.
-
-    A 10 %+ average weight is considered maximum conviction.
+    Average portfolio weight across holders, normalised 0-100.
+    Ceiling at 20% (was 10% — too low for concentrated portfolios).
     """
     weights = [h["portfolio_weight"] for h in stock["holders"]]
     if not weights:
         return 0.0
     avg = statistics.mean(weights)
-    # Normalise: 10% avg weight -> score of 100
-    return min(avg / 10.0 * 100, 100.0)
+    return min(avg / 20.0 * 100, 100.0)
+
+
+def _fundamental_score(stock: dict[str, Any]) -> float:
+    """
+    Score based on financial health. Components:
+    - P/E ratio: 5-25 is ideal (score 80-100), <5 or >50 penalised
+    - Revenue growth: positive = good, >15% = great
+    - Profit margin: positive = good, >20% = great
+    Returns 0-100. Returns 50 (neutral) if no data available.
+    """
+    enr = stock.get("enrichment")
+    if not enr:
+        return 50.0
+
+    sub_scores: list[float] = []
+
+    # P/E ratio scoring
+    pe = enr.get("peRatio")
+    if pe is not None and pe != 0:
+        if pe < 0:
+            sub_scores.append(15.0)  # Loss-making company
+        elif pe < 5:
+            sub_scores.append(40.0)  # Suspiciously cheap or cyclical trough
+        elif pe <= 15:
+            sub_scores.append(95.0)  # Value sweet spot
+        elif pe <= 25:
+            sub_scores.append(80.0)  # Reasonable
+        elif pe <= 40:
+            sub_scores.append(55.0)  # Expensive, needs growth to justify
+        elif pe <= 60:
+            sub_scores.append(35.0)  # Very expensive
+        else:
+            sub_scores.append(20.0)  # Extreme valuation
+    else:
+        sub_scores.append(50.0)
+
+    # Revenue growth scoring
+    rev_growth = enr.get("revenueGrowthYoY") or enr.get("revenueGrowth")
+    if rev_growth is not None:
+        if rev_growth > 0.30:
+            sub_scores.append(95.0)
+        elif rev_growth > 0.15:
+            sub_scores.append(85.0)
+        elif rev_growth > 0.05:
+            sub_scores.append(70.0)
+        elif rev_growth > 0:
+            sub_scores.append(55.0)
+        elif rev_growth > -0.10:
+            sub_scores.append(35.0)
+        else:
+            sub_scores.append(15.0)  # Shrinking revenue
+    else:
+        sub_scores.append(50.0)
+
+    # Profit margin scoring
+    margin = enr.get("profitMargin")
+    if margin is not None:
+        if margin > 0.25:
+            sub_scores.append(95.0)
+        elif margin > 0.15:
+            sub_scores.append(80.0)
+        elif margin > 0.05:
+            sub_scores.append(60.0)
+        elif margin > 0:
+            sub_scores.append(45.0)
+        else:
+            sub_scores.append(20.0)  # Unprofitable
+    else:
+        sub_scores.append(50.0)
+
+    return statistics.mean(sub_scores) if sub_scores else 50.0
+
+
+def _price_value_score(stock: dict[str, Any]) -> float:
+    """
+    Where is the current price relative to the 52-week range?
+    Closer to 52w low = higher score (potential value).
+    Closer to 52w high = lower score (less upside).
+    For a long-term strategy, buying near lows is preferred.
+    Returns 0-100. 50 if no data.
+    """
+    enr = stock.get("enrichment")
+    if not enr:
+        return 50.0
+
+    price = enr.get("currentPrice")
+    high = enr.get("fiftyTwoWeekHigh") or enr.get("high52w")
+    low = enr.get("fiftyTwoWeekLow") or enr.get("low52w")
+
+    if not price or not high or not low or high == low:
+        return 50.0
+
+    # Position in range: 0 = at low, 1 = at high
+    position = (price - low) / (high - low)
+    position = max(0.0, min(1.0, position))
+
+    # Invert: closer to low = higher score
+    # But don't reward stocks in freefall — if >30% below high, moderate the score
+    raw_score = (1.0 - position) * 100
+
+    # Penalty if the stock dropped too much (>40% from high = distress signal)
+    drop_pct = (high - price) / high
+    if drop_pct > 0.40:
+        raw_score *= 0.6  # Penalise distressed stocks
+
+    return max(0.0, min(100.0, raw_score))
 
 
 def _new_position_bonus(stock: dict[str, Any]) -> float:
-    """
-    Award bonus points if multiple investors opened a new position
-    in the same quarter.
-    """
-    if stock.get("new_position_count", 0) >= NEW_POSITION_BONUS_THRESHOLD:
-        return float(NEW_POSITION_BONUS_POINTS)
-    # Partial credit
+    """Award bonus if multiple investors opened new position same quarter."""
     count = stock.get("new_position_count", 0)
+    if count >= NEW_POSITION_BONUS_THRESHOLD:
+        return float(NEW_POSITION_BONUS_POINTS)
     if count > 0:
-        return float(NEW_POSITION_BONUS_POINTS) * (
-            count / NEW_POSITION_BONUS_THRESHOLD
-        )
+        return float(NEW_POSITION_BONUS_POINTS) * (count / NEW_POSITION_BONUS_THRESHOLD)
     return 0.0
-
-
-def _momentum_alignment(stock: dict[str, Any]) -> float:
-    """
-    Check whether the stock's recent price trend aligns with the buying
-    pattern.  If investors are buying and the price is rising, that is
-    positive momentum alignment.
-
-    Returns 0-100.
-    """
-    ticker = stock.get("ticker")
-    if not ticker:
-        return 50.0  # neutral when we can't check
-
-    # Determine net buy/sell signal from holders
-    buy_signals = 0
-    sell_signals = 0
-    for h in stock["holders"]:
-        ct = h.get("change_type", "held")
-        if ct in ("new", "increased"):
-            buy_signals += 1
-        elif ct in ("decreased", "exited"):
-            sell_signals += 1
-
-    if buy_signals == 0 and sell_signals == 0:
-        return 50.0  # neutral
-
-    net_signal = (buy_signals - sell_signals) / (buy_signals + sell_signals)
-    # net_signal: -1 (all selling) to +1 (all buying)
-
-    # Fetch price history
-    try:
-        history = get_price_history(ticker, period="3mo", interval="1wk")
-        if not history or len(history) < 3:
-            return 50.0
-
-        prices = [p["close"] for p in history]
-        first_half = statistics.mean(prices[: len(prices) // 2])
-        second_half = statistics.mean(prices[len(prices) // 2 :])
-        if first_half == 0:
-            return 50.0
-
-        price_trend = (second_half - first_half) / first_half
-        # price_trend: negative = falling, positive = rising
-
-        # Alignment: both positive or both negative
-        alignment = net_signal * price_trend  # positive = aligned
-        # Map to 0-100.  Perfect alignment -> 100, perfect misalignment -> 0
-        score = 50 + alignment * 50 * 10  # scale factor
-        return max(0.0, min(100.0, score))
-
-    except Exception:
-        logger.debug("Momentum check failed for %s", ticker)
-        return 50.0
 
 
 # ---------------------------------------------------------------------------
@@ -277,53 +299,38 @@ def score_stocks(
     compute_momentum: bool = True,
 ) -> list[dict[str, Any]]:
     """
-    Compute all scoring components and an overall score for each stock.
-
-    Parameters
-    ----------
-    stock_map : dict
-        Output of :func:`aggregate_holdings`.
-    total_investors : int
-        Number of investors tracked (denominator for consensus).
-    compute_momentum : bool
-        If *False*, skip the (slow) momentum alignment calculation.
-
-    Returns
-    -------
-    list
-        Sorted by overall_score descending.  Each item is the stock dict
-        augmented with score fields.
+    Compute all scoring components and overall score for each stock.
+    Returns list sorted by overall_score descending.
     """
     w = SCORING_WEIGHTS
     scored: list[dict[str, Any]] = []
 
     total = len(stock_map)
     for idx, (cusip, stock) in enumerate(stock_map.items(), 1):
-        if idx % 100 == 0:
+        if idx % 500 == 0:
             logger.info("Scoring progress: %d / %d", idx, total)
 
         cs = _consensus_score(stock, total_investors)
         cv = _conviction_score(stock)
+        fs = _fundamental_score(stock)
+        pv = _price_value_score(stock)
         npb = _new_position_bonus(stock)
-        ma = (
-            _momentum_alignment(stock)
-            if compute_momentum
-            else 50.0
-        )
 
         overall = (
             w["consensus"] * cs
             + w["conviction"] * cv
+            + w["fundamental"] * fs
+            + w["price_value"] * pv
             + w["new_position_bonus"] * npb
-            + w["momentum_alignment"] * ma
         )
         overall = round(max(0.0, min(100.0, overall)), 2)
 
         stock["scores"] = {
             "consensus": round(cs, 2),
             "conviction": round(cv, 2),
+            "fundamental": round(fs, 2),
+            "price_value": round(pv, 2),
             "new_position_bonus": round(npb, 2),
-            "momentum_alignment": round(ma, 2),
             "overall": overall,
         }
         scored.append(stock)
@@ -340,32 +347,45 @@ def score_stocks(
 def identify_top_picks(
     scored_stocks: list[dict[str, Any]], top_n: int = 20
 ) -> list[dict[str, Any]]:
-    """Return the top-N highest-scoring stocks."""
-    return scored_stocks[:top_n]
+    """
+    Return top-N stocks that pass minimum quality filters:
+    - At least 3 holders
+    - Fundamental score >= 40 (not loss-making with bad metrics)
+    - Overall score >= 30
+    Falls back to pure score ranking if filters are too restrictive.
+    """
+    filtered = [
+        s for s in scored_stocks
+        if s.get("holder_count", 0) >= 3
+        and s.get("scores", {}).get("fundamental", 50) >= 40
+        and s.get("scores", {}).get("overall", 0) >= 30
+    ]
+    if len(filtered) < top_n:
+        filtered = scored_stocks
+    return filtered[:top_n]
 
 
 def identify_sell_signals(
     all_investor_holdings: list[dict[str, Any]],
-    min_exits: int = 3,
+    scored_stocks: list[dict[str, Any]] | None = None,
+    min_exits: int = 2,
 ) -> list[dict[str, Any]]:
     """
-    Identify stocks being exited by multiple investors.
-
-    Parameters
-    ----------
-    all_investor_holdings : list
-        Same structure as the input to :func:`aggregate_holdings`.
-    min_exits : int
-        Minimum number of investors exiting for it to be a signal.
-
-    Returns
-    -------
-    list
-        Each item has ``cusip``, ``nameOfIssuer``, ``exiting_investors``,
-        ``exit_count``.
+    Identify stocks to sell/avoid. Combines:
+    1. Multiple investors exiting (classic signal)
+    2. Deteriorating fundamentals (low fundamental score)
+    3. Stocks near 52-week highs with many sellers (distribution)
     """
-    exit_map: dict[str, dict[str, Any]] = {}
+    # Build score lookup
+    score_lookup: dict[str, dict[str, Any]] = {}
+    if scored_stocks:
+        for s in scored_stocks:
+            cusip = s.get("cusip", "")
+            if cusip:
+                score_lookup[cusip] = s.get("scores", {})
 
+    # Collect exits
+    exit_map: dict[str, dict[str, Any]] = {}
     for inv in all_investor_holdings:
         investor_name = inv.get("investor_name", "Unknown")
         changes = inv.get("changes", {})
@@ -384,9 +404,28 @@ def identify_sell_signals(
             exit_map[cusip]["exiting_investors"].append(investor_name)
             exit_map[cusip]["exit_count"] += 1
 
-    signals = [
-        v for v in exit_map.values() if v["exit_count"] >= min_exits
-    ]
-    signals.sort(key=lambda s: s["exit_count"], reverse=True)
+    signals: list[dict[str, Any]] = []
+    for cusip, info in exit_map.items():
+        if info["exit_count"] < min_exits:
+            continue
+
+        scores = score_lookup.get(cusip, {})
+        fundamental = scores.get("fundamental", 50)
+        price_value = scores.get("price_value", 50)
+
+        # Severity: more exits + bad fundamentals + near highs = stronger signal
+        severity = info["exit_count"] * 10
+        if fundamental < 40:
+            severity += 20  # Bad fundamentals amplify signal
+        if price_value < 30:
+            severity += 10  # Near 52w high (low price_value = near high)
+
+        info["severity"] = severity
+        info["fundamental_score"] = fundamental
+        info["price_value_score"] = price_value
+        info["overall_score"] = scores.get("overall", 0)
+        signals.append(info)
+
+    signals.sort(key=lambda s: s["severity"], reverse=True)
     logger.info("Identified %d sell signals (>=%d exits)", len(signals), min_exits)
     return signals
