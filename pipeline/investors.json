@@ -56,13 +56,6 @@
     "cik_verified": true
   },
   {
-    "name": "Mohnish Pabrai",
-    "fund": "Pabrai Investment Funds",
-    "cik": "0001173334",
-    "category": "value",
-    "cik_verified": true
-  },
-  {
     "name": "Carl Icahn",
     "fund": "Icahn Capital LP",
     "cik": "0000921669",
@@ -135,7 +128,7 @@
   {
     "name": "Howard Marks",
     "fund": "Oaktree Capital Management",
-    "cik": "0001403528",
+    "cik": "0001403527",
     "category": "value",
     "cik_verified": true
   },
@@ -149,21 +142,21 @@
   {
     "name": "Tom Russo",
     "fund": "Gardner Russo & Quinn",
-    "cik": "0001352523",
+    "cik": "0000860643",
     "category": "value",
     "cik_verified": true
   },
   {
     "name": "Pat Dorsey",
     "fund": "Dorsey Asset Management",
-    "cik": "0001767680",
+    "cik": "0001671657",
     "category": "value",
     "cik_verified": true
   },
   {
     "name": "Terry Smith",
-    "fund": "Fundsmith LLP",
-    "cik": "0001569838",
+    "fund": "Fundsmith Equity Fund",
+    "cik": "0001520023",
     "category": "growth",
     "cik_verified": true
   },
@@ -189,13 +182,6 @@
     "cik_verified": true
   },
   {
-    "name": "Eddie Lampert",
-    "fund": "ESL Investments",
-    "cik": "0001065332",
-    "category": "value",
-    "cik_verified": true
-  },
-  {
     "name": "John Paulson",
     "fund": "Paulson & Co Inc",
     "cik": "0001035674",
@@ -205,7 +191,7 @@
   {
     "name": "Leon Cooperman",
     "fund": "Omega Advisors",
-    "cik": "0001061165",
+    "cik": "0000898202",
     "category": "value",
     "cik_verified": true
   },
@@ -233,28 +219,28 @@
   {
     "name": "Bill Miller",
     "fund": "Miller Value Partners",
-    "cik": "0001536411",
+    "cik": "0001135778",
     "category": "value",
-    "cik_verified": false
+    "cik_verified": true
   },
   {
     "name": "Steve Mandel",
     "fund": "Lone Pine Capital",
     "cik": "0001061165",
     "category": "growth",
-    "cik_verified": false
+    "cik_verified": true
   },
   {
     "name": "Lee Ainslie",
     "fund": "Maverick Capital",
-    "cik": "0001040280",
+    "cik": "0000934639",
     "category": "multi-strategy",
     "cik_verified": true
   },
   {
     "name": "Alexander Sacerdote",
     "fund": "Whale Rock Capital Management",
-    "cik": "0001633336",
+    "cik": "0001387322",
     "category": "growth",
     "cik_verified": true
   },
@@ -275,35 +261,35 @@
   {
     "name": "Brad Gerstner",
     "fund": "Altimeter Capital Management",
-    "cik": "0001730514",
+    "cik": "0001541617",
     "category": "growth",
     "cik_verified": true
   },
   {
     "name": "Dennis Hong",
     "fund": "ShawSpring Partners",
-    "cik": "0001697205",
+    "cik": "0001766908",
     "category": "growth",
     "cik_verified": true
   },
   {
     "name": "Frank Sands",
     "fund": "Sands Capital Management",
-    "cik": "0001535778",
+    "cik": "0001020066",
     "category": "growth",
     "cik_verified": true
   },
   {
     "name": "Rajiv Jain",
     "fund": "GQG Partners",
-    "cik": "0001715072",
+    "cik": "0001697233",
     "category": "growth",
     "cik_verified": true
   },
   {
     "name": "Christopher Davis",
-    "fund": "Davis Advisors",
-    "cik": "0000014848",
+    "fund": "Davis Selected Advisers",
+    "cik": "0001036325",
     "category": "value",
     "cik_verified": true
   },
