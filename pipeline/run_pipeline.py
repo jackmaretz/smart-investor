@@ -398,12 +398,29 @@ def run(
     )
 
     # ------------------------------------------------------------------
-    # 4b. Enrich with yfinance data
+    # 4b. Aggregate first, then enrich only relevant stocks
     # ------------------------------------------------------------------
-    logger.info("Enriching %d holding records via yfinance", len(all_holdings_flat))
-    enrich_holdings(all_holdings_flat, force=force)
+    stock_map = aggregate_holdings(all_investor_holdings)
 
-    # Re-aggregate after enrichment (tickers + enrichment data are now set)
+    # Only enrich stocks held by 2+ investors (filters out thousands of
+    # irrelevant bonds, warrants, and micro-positions)
+    relevant_holdings = []
+    for stock in stock_map.values():
+        if stock.get("holder_count", 0) >= 2 and stock.get("ticker"):
+            for h in all_holdings_flat:
+                if h.get("cusip") == stock["cusip"]:
+                    relevant_holdings.append(h)
+                    break
+
+    logger.info(
+        "Enriching %d relevant holdings (2+ holders) via yfinance "
+        "(skipping %d single-holder positions)",
+        len(relevant_holdings),
+        len(stock_map) - len(relevant_holdings),
+    )
+    enrich_holdings(relevant_holdings, force=force)
+
+    # Re-aggregate to pick up enrichment data
     stock_map = aggregate_holdings(all_investor_holdings)
 
     # ------------------------------------------------------------------

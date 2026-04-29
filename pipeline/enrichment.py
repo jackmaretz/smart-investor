@@ -466,10 +466,13 @@ def enrich_holdings(
     tickers_seen: set[str] = set()
     enrichment_map: dict[str, dict[str, Any]] = {}
 
-    # First pass: resolve tickers
+    # First pass: resolve tickers, skip garbage (bonds, warrants, notes)
     for h in holdings:
         ticker = h.get("ticker") or cusip_to_ticker(h.get("cusip", ""))
         if ticker:
+            # Filter out non-equity tickers (contain spaces, slashes, or dates)
+            if " " in ticker or "/" in ticker or any(c.isdigit() for c in ticker[-3:]):
+                continue
             h["ticker"] = ticker
             if ticker not in tickers_seen:
                 tickers_seen.add(ticker)
